@@ -3,12 +3,11 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { PrismaService } from '../src/common/services/prisma.service';
+import * as crypto from 'crypto';
 
 describe('Auth E2E Tests', () => {
     let app: INestApplication;
     let prisma: PrismaService;
-    let verificationToken: string;
-    let userEmail: string;
 
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -46,6 +45,8 @@ describe('Auth E2E Tests', () => {
     });
 
     describe('Email Verification Flow', () => {
+        let userEmail: string;
+
         it('should register user and send verification email', async () => {
             userEmail = `test${Date.now()}@e2etest.com`;
 
@@ -80,8 +81,6 @@ describe('Auth E2E Tests', () => {
             });
 
             // For testing, we need to create a valid token
-            // In real scenario, this would come from the email
-            const crypto = require('crypto');
             const rawToken = crypto.randomBytes(32).toString('hex');
             const hashedToken = crypto
                 .createHash('sha256')
@@ -121,7 +120,6 @@ describe('Auth E2E Tests', () => {
         });
 
         it('should fail with expired token', async () => {
-            const crypto = require('crypto');
             const rawToken = crypto.randomBytes(32).toString('hex');
             const hashedToken = crypto
                 .createHash('sha256')
@@ -223,7 +221,7 @@ describe('Auth E2E Tests', () => {
                     lastName: 'User',
                 });
 
-            // Verify email
+            // Verify email and activate account
             const user = await prisma.user.findUnique({
                 where: { email: loginEmail },
             });
