@@ -79,8 +79,8 @@ export class AuthService {
                 verificationToken,
                 `${firstName} ${lastName}`,
             );
-        } catch (error) {
-            console.error('Failed to send verification email:', error);
+        } catch (_error) {
+            console.error('Failed to send verification email:', _error);
             // Don't fail registration if email fails
         }
 
@@ -341,8 +341,8 @@ export class AuthService {
                 user.email,
                 `${user.firstName} ${user.lastName}`,
             );
-        } catch (error) {
-            console.error('Failed to send welcome email:', error);
+        } catch (_error) {
+            console.error('Failed to send welcome email:', _error);
         }
 
         return {
@@ -392,8 +392,8 @@ export class AuthService {
                 verificationToken,
                 `${user.firstName} ${user.lastName}`,
             );
-        } catch (error) {
-            console.error('Failed to send verification email:', error);
+        } catch (_error) {
+            console.error('Failed to send verification email:', _error);
             throw new Error('Failed to send verification email');
         }
 

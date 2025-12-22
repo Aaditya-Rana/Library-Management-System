@@ -8,8 +8,8 @@ jest.mock('nodemailer');
 
 describe('EmailService', () => {
     let service: EmailService;
-    let configService: ConfigService;
-    let mockTransporter: any;
+    let _configService: ConfigService;
+    let mockTransporter: jest.Mocked<{ sendMail: jest.Mock }>;
 
     beforeEach(async () => {
         // Create mock transporter
@@ -43,7 +43,7 @@ describe('EmailService', () => {
         }).compile();
 
         service = module.get<EmailService>(EmailService);
-        configService = module.get<ConfigService>(ConfigService);
+        _configService = module.get<ConfigService>(ConfigService);
     });
 
     afterEach(() => {
