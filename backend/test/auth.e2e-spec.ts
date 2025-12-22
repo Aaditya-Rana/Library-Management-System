@@ -80,6 +80,10 @@ describe('Auth E2E Tests', () => {
                 where: { email: userEmail },
             });
 
+            if (!user) {
+                throw new Error('User not found');
+            }
+
             // For testing, we need to create a valid token
             const rawToken = crypto.randomBytes(32).toString('hex');
             const hashedToken = crypto
@@ -108,9 +112,9 @@ describe('Auth E2E Tests', () => {
                 where: { email: userEmail },
             });
 
-            expect(verifiedUser.emailVerified).toBe(true);
-            expect(verifiedUser.emailVerificationToken).toBeNull();
-            expect(verifiedUser.emailVerificationExpiry).toBeNull();
+            expect(verifiedUser?.emailVerified).toBe(true);
+            expect(verifiedUser?.emailVerificationToken).toBeNull();
+            expect(verifiedUser?.emailVerificationExpiry).toBeNull();
         });
 
         it('should fail with invalid token', async () => {
@@ -172,8 +176,8 @@ describe('Auth E2E Tests', () => {
                 where: { email: newEmail },
             });
 
-            expect(user.emailVerificationToken).toBeDefined();
-            expect(user.emailVerificationExpiry).toBeDefined();
+            expect(user?.emailVerificationToken).toBeDefined();
+            expect(user?.emailVerificationExpiry).toBeDefined();
         });
 
         it('should fail to resend for already verified email', async () => {
