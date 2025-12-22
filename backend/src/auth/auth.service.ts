@@ -234,7 +234,7 @@ export class AuthService {
                     expiresIn: tokens.expiresIn,
                 },
             };
-        } catch (error) {
+        } catch (_error) {
             throw new UnauthorizedException('Invalid refresh token');
         }
     }
@@ -299,7 +299,7 @@ export class AuthService {
                 success: true,
                 message: 'Password reset successful',
             };
-        } catch (error) {
+        } catch (_error) {
             throw new UnauthorizedException('Invalid or expired reset token');
         }
     }
