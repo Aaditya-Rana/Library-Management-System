@@ -103,6 +103,109 @@ curl -X POST http://localhost:3000/auth/login \
 
 ---
 
+### 3. Refresh Token
+**POST** `/auth/refresh`
+
+**Description:** Get new access token using refresh token.
+
+**Request Body:**
+```json
+{
+  "refreshToken": "eyJhbGci..."
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "accessToken": "eyJhbGci...",
+    "expiresIn": 604800
+  }
+}
+```
+
+**Test with cURL:**
+```bash
+curl -X POST http://localhost:3000/auth/refresh \
+  -H "Content-Type: application/json" \
+  -d '{
+    "refreshToken": "YOUR_REFRESH_TOKEN"
+  }'
+```
+
+---
+
+### 4. Forgot Password
+**POST** `/auth/forgot-password`
+
+**Description:** Request password reset token (sent via email in production).
+
+**Request Body:**
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "message": "Password reset link sent to your email",
+  "data": {
+    "resetToken": "eyJhbGci..."
+  }
+}
+```
+
+**Note:** In production, the reset token is sent via email. Currently returns token in response for testing.
+
+**Test with cURL:**
+```bash
+curl -X POST http://localhost:3000/auth/forgot-password \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com"
+  }'
+```
+
+---
+
+### 5. Reset Password
+**POST** `/auth/reset-password`
+
+**Description:** Reset password using token from forgot-password endpoint.
+
+**Request Body:**
+```json
+{
+  "token": "eyJhbGci...",
+  "newPassword": "NewSecurePass123!"
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "message": "Password reset successful"
+}
+```
+
+**Test with cURL:**
+```bash
+curl -X POST http://localhost:3000/auth/reset-password \
+  -H "Content-Type: application/json" \
+  -d '{
+    "token": "RESET_TOKEN_FROM_FORGOT_PASSWORD",
+    "newPassword": "newpassword123"
+  }'
+```
+
+---
+
 ## Authentication
 
 All protected endpoints require the JWT token in the Authorization header:

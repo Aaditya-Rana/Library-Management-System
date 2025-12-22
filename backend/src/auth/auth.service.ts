@@ -185,4 +185,94 @@ export class AuthService {
             expiresIn: 604800, // 7 days in seconds
         };
     }
+
+    async refreshTokenFromToken(refreshToken: string) {
+        try {
+            const payload = this.jwtService.verify(refreshToken);
+            const user = await this.prisma.user.findUnique({
+                where: { id: payload.sub },
+            });
+
+            if (!user || user.status !== UserStatus.ACTIVE) {
+                throw new UnauthorizedException('Invalid refresh token');
+            }
+
+            const tokens = await this.generateTokens(user.id, user.email, user.role);
+
+            return {
+                success: true,
+                data: {
+                    accessToken: tokens.accessToken,
+                    expiresIn: tokens.expiresIn,
+                },
+            };
+        } catch (error) {
+            throw new UnauthorizedException('Invalid refresh token');
+        }
+    }
+
+    async forgotPassword(email: string) {
+        const user = await this.prisma.user.findUnique({
+            where: { email },
+        });
+
+        // Don't reveal if user exists or not for security
+        if (!user) {
+            return {
+                success: true,
+                message: 'Password reset link sent to your email',
+            };
+        }
+
+        // Generate reset token (valid for 1 hour)
+        const resetToken = this.jwtService.sign(
+            { sub: user.id, type: 'password-reset' },
+            { expiresIn: '1h' },
+        );
+
+        // TODO: Send email with reset link
+        // For now, we'll just return the token (in production, send via email)
+        console.log(`Password reset token for ${email}: ${resetToken}`);
+
+        return {
+            success: true,
+            message: 'Password reset link sent to your email',
+            // Remove this in production - only for testing
+            data: { resetToken },
+        };
+    }
+
+    async resetPassword(token: string, newPassword: string) {
+        try {
+            const payload = this.jwtService.verify(token);
+
+            if (payload.type !== 'password-reset') {
+                throw new UnauthorizedException('Invalid reset token');
+            }
+
+            const user = await this.prisma.user.findUnique({
+                where: { id: payload.sub },
+            });
+
+            if (!user) {
+                throw new UnauthorizedException('Invalid reset token');
+            }
+
+            // Hash new password
+            const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+            // Update password
+            await this.prisma.user.update({
+                where: { id: user.id },
+                data: { password: hashedPassword },
+            });
+
+            return {
+                success: true,
+                message: 'Password reset successful',
+            };
+        } catch (error) {
+            throw new UnauthorizedException('Invalid or expired reset token');
+        }
+    }
 }
