@@ -1,0 +1,600 @@
+// This is your Prisma schema file
+// Database schema for Library Management System
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  LIBRARIAN
+  USER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  PENDING_APPROVAL
+}
+
+enum MembershipType {
+  FREE
+  PREMIUM
+  STUDENT
+  CORPORATE
+}
+
+enum BookStatus {
+  AVAILABLE
+  ISSUED
+  RESERVED
+  IN_TRANSIT_DELIVERY
+  IN_TRANSIT_RETURN
+  DAMAGED
+  LOST
+  MAINTENANCE
+}
+
+enum BookCondition {
+  NEW
+  EXCELLENT
+  GOOD
+  FAIR
+  POOR
+  DAMAGED
+}
+
+enum TransactionStatus {
+  ISSUED
+  RETURNED
+  OVERDUE
+  RENEWED
+}
+
+enum DeliveryStatus {
+  PENDING
+  PAYMENT_CONFIRMED
+  APPROVED
+  READY_FOR_DELIVERY
+  ASSIGNED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  PICKUP_SCHEDULED
+  PICKUP_IN_PROGRESS
+  RETURNED
+  FAILED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  UPI
+  NET_BANKING
+  WALLET
+}
+
+enum NotificationType {
+  EMAIL
+  SMS
+  IN_APP
+}
+
+enum NotificationCategory {
+  BOOK_ISSUED
+  BOOK_RETURNED
+  DUE_REMINDER
+  OVERDUE_NOTICE
+  RESERVATION_AVAILABLE
+  DELIVERY_UPDATE
+  PAYMENT_CONFIRMATION
+  FINE_NOTICE
+}
+
+// ============================================
+// USER MANAGEMENT
+// ============================================
+
+model User {
+  id                String           @id @default(uuid())
+  email             String           @unique
+  password          String
+  role              UserRole         @default(USER)
+  status            UserStatus       @default(PENDING_APPROVAL)
+  
+  // Profile
+  firstName         String
+  lastName          String
+  phone             String?
+  dateOfBirth       DateTime?
+  profileImageUrl   String?
+  
+  // Membership
+  membershipType    MembershipType   @default(FREE)
+  membershipExpiry  DateTime?
+  
+  // Settings
+  emailVerified     Boolean          @default(false)
+  twoFactorEnabled  Boolean          @default(false)
+  
+  // Metadata
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  lastLoginAt       DateTime?
+  
+  // Relations
+  addresses         Address[]
+  transactions      Transaction[]
+  reservations      Reservation[]
+  reviews           Review[]
+  notifications     Notification[]
+  deliveryRequests  DeliveryRequest[]
+  payments          Payment[]
+  auditLogs         AuditLog[]
+  
+  @@index([email])
+  @@index([role])
+  @@index([status])
+}
+
+model Address {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  addressType     String   // home, work, other
+  addressLine1    String
+  addressLine2    String?
+  city            String
+  state           String
+  pincode         String
+  landmark        String?
+  
+  latitude        Float?
+  longitude       Float?
+  isDefault       Boolean  @default(false)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  deliveryRequests DeliveryRequest[]
+  
+  @@index([userId])
+}
+
+// ============================================
+// BOOK MANAGEMENT
+// ============================================
+
+model Book {
+  id                String         @id @default(uuid())
+  
+  // Basic Info
+  isbn              String         @unique
+  title             String
+  author            String
+  publisher         String?
+  edition           String?
+  publicationYear   Int?
+  language          String         @default("English")
+  
+  // Classification
+  genre             String
+  category          String
+  subCategory       String?
+  
+  // Physical Details
+  pages             Int?
+  format            String?        // hardcover, paperback, etc.
+  
+  // Content
+  description       String?        @db.Text
+  coverImageUrl     String?
+  
+  // Inventory
+  totalCopies       Int            @default(1)
+  availableCopies   Int            @default(1)
+  
+  // Pricing & Policies
+  bookValue         Float          // For damage/loss calculation
+  securityDeposit   Float          @default(200)
+  loanPeriodDays    Int            @default(14)
+  finePerDay        Float          @default(5)
+  maxRenewals       Int            @default(2)
+  
+  // Flags
+  isDeliveryEligible Boolean       @default(true)
+  isActive          Boolean        @default(true)
+  
+  // Metadata
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  
+  // Relations
+  copies            BookCopy[]
+  transactions      Transaction[]
+  reservations      Reservation[]
+  reviews           Review[]
+  deliveryRequests  DeliveryRequest[]
+  
+  @@index([isbn])
+  @@index([title])
+  @@index([author])
+  @@index([genre])
+  @@index([category])
+}
+
+model BookCopy {
+  id              String         @id @default(uuid())
+  bookId          String
+  book            Book           @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  
+  copyNumber      String         // e.g., "001", "002"
+  barcode         String         @unique
+  
+  status          BookStatus     @default(AVAILABLE)
+  condition       BookCondition  @default(GOOD)
+  
+  // Location
+  shelfLocation   String?
+  section         String?
+  
+  // Tracking
+  acquiredDate    DateTime       @default(now())
+  lastIssuedDate  DateTime?
+  
+  // Condition tracking
+  conditionNotes  String?        @db.Text
+  conditionPhotos Json?          // Array of image URLs
+  
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  // Relations
+  transactions    Transaction[]
+  
+  @@index([bookId])
+  @@index([barcode])
+  @@index([status])
+}
+
+// ============================================
+// CIRCULATION
+// ============================================
+
+model Transaction {
+  id              String            @id @default(uuid())
+  
+  userId          String
+  user            User              @relation(fields: [userId], references: [id])
+  
+  bookId          String
+  book            Book              @relation(fields: [bookId], references: [id])
+  
+  bookCopyId      String
+  bookCopy        BookCopy          @relation(fields: [bookCopyId], references: [id])
+  
+  librarianId     String?           // Who issued the book
+  
+  // Dates
+  issueDate       DateTime          @default(now())
+  dueDate         DateTime
+  returnDate      DateTime?
+  
+  // Status
+  status          TransactionStatus @default(ISSUED)
+  renewalCount    Int               @default(0)
+  
+  // Charges
+  fineAmount      Float             @default(0)
+  finePaid        Boolean           @default(false)
+  damageCharge    Float             @default(0)
+  
+  // Condition tracking
+  issueCondition  Json?             // Photos at issue time
+  returnCondition Json?             // Photos at return time
+  
+  // Metadata
+  isHomeDelivery  Boolean           @default(false)
+  notes           String?           @db.Text
+  
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  
+  // Relations
+  payments        Payment[]
+  
+  @@index([userId])
+  @@index([bookId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+model Reservation {
+  id              String    @id @default(uuid())
+  
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  bookId          String
+  book            Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  
+  reservedDate    DateTime  @default(now())
+  expiresAt       DateTime?
+  notifiedAt      DateTime?
+  
+  status          String    // pending, fulfilled, expired, cancelled
+  priority        Int       @default(0)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([userId])
+  @@index([bookId])
+  @@index([status])
+}
+
+// ============================================
+// HOME DELIVERY
+// ============================================
+
+model DeliveryRequest {
+  id                    String          @id @default(uuid())
+  
+  userId                String
+  user                  User            @relation(fields: [userId], references: [id])
+  
+  bookId                String
+  book                  Book            @relation(fields: [bookId], references: [id])
+  
+  addressId             String
+  address               Address         @relation(fields: [addressId], references: [id])
+  
+  requestType           String          // delivery, pickup
+  
+  // Scheduling
+  preferredDate         DateTime
+  preferredSlot         String          // morning, afternoon, evening
+  scheduledDate         DateTime?
+  scheduledSlot         String?
+  
+  // Assignment
+  assignedToId          String?
+  assignedTo            DeliveryPersonnel? @relation(fields: [assignedToId], references: [id])
+  assignedAt            DateTime?
+  
+  // Status
+  status                DeliveryStatus  @default(PENDING)
+  
+  // Delivery details
+  deliveredAt           DateTime?
+  deliveryProofUrl      String?
+  deliverySignatureUrl  String?
+  deliveryNotes         String?        @db.Text
+  
+  // Book condition
+  conditionOnDelivery   Json?
+  conditionOnReturn     Json?
+  
+  // Charges
+  deliveryFee           Float           @default(50)
+  securityDeposit       Float           @default(200)
+  
+  // Special instructions
+  specialInstructions   String?         @db.Text
+  
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  
+  // Relations
+  payments              Payment[]
+  
+  @@index([userId])
+  @@index([bookId])
+  @@index([status])
+  @@index([assignedToId])
+}
+
+model DeliveryPersonnel {
+  id                    String            @id @default(uuid())
+  
+  name                  String
+  phone                 String
+  email                 String?
+  
+  employeeId            String            @unique
+  status                String            @default("active") // active, inactive, on_leave
+  
+  // Vehicle
+  vehicleType           String?           // bike, car, bicycle
+  vehicleNumber         String?
+  
+  // Performance
+  totalDeliveries       Int               @default(0)
+  successfulDeliveries  Int               @default(0)
+  failedDeliveries      Int               @default(0)
+  averageRating         Float?
+  
+  // Availability
+  available             Boolean           @default(true)
+  currentLocationLat    Float?
+  currentLocationLng    Float?
+  lastLocationUpdate    DateTime?
+  
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  
+  // Relations
+  deliveryRequests      DeliveryRequest[]
+  
+  @@index([employeeId])
+  @@index([status])
+}
+
+// ============================================
+// PAYMENTS
+// ============================================
+
+model Payment {
+  id                String         @id @default(uuid())
+  
+  userId            String
+  user              User           @relation(fields: [userId], references: [id])
+  
+  transactionId     String?
+  transaction       Transaction?   @relation(fields: [transactionId], references: [id])
+  
+  deliveryRequestId String?
+  deliveryRequest   DeliveryRequest? @relation(fields: [deliveryRequestId], references: [id])
+  
+  // Payment details
+  amount            Float
+  paymentMethod     PaymentMethod
+  paymentStatus     PaymentStatus  @default(PENDING)
+  
+  // Gateway details
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  razorpaySignature String?
+  
+  // Breakdown
+  deliveryFee       Float          @default(0)
+  securityDeposit   Float          @default(0)
+  lateFee           Float          @default(0)
+  damageCharge      Float          @default(0)
+  
+  // Refund
+  refundAmount      Float?
+  refundDate        DateTime?
+  refundReason      String?
+  
+  // Metadata
+  paymentDate       DateTime?
+  notes             String?        @db.Text
+  
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  
+  @@index([userId])
+  @@index([paymentStatus])
+  @@index([razorpayOrderId])
+}
+
+// ============================================
+// REVIEWS & RATINGS
+// ============================================
+
+model Review {
+  id              String    @id @default(uuid())
+  
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  bookId          String
+  book            Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  
+  rating          Int       // 1-5
+  reviewText      String?   @db.Text
+  helpfulCount    Int       @default(0)
+  
+  status          String    @default("pending") // pending, approved, rejected
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@unique([userId, bookId])
+  @@index([bookId])
+  @@index([rating])
+}
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+model Notification {
+  id              String              @id @default(uuid())
+  
+  userId          String
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type            NotificationType
+  category        NotificationCategory
+  
+  title           String
+  message         String              @db.Text
+  
+  read            Boolean             @default(false)
+  sentAt          DateTime?
+  
+  createdAt       DateTime            @default(now())
+  
+  @@index([userId])
+  @@index([read])
+  @@index([category])
+}
+
+// ============================================
+// SYSTEM CONFIGURATION
+// ============================================
+
+model SystemSetting {
+  id              String    @id @default(uuid())
+  
+  key             String    @unique
+  value           String    @db.Text
+  category        String    // fine_rates, delivery_charges, loan_periods, etc.
+  description     String?
+  
+  updatedBy       String?
+  updatedAt       DateTime  @updatedAt
+  createdAt       DateTime  @default(now())
+  
+  @@index([category])
+}
+
+// ============================================
+// AUDIT LOGS
+// ============================================
+
+model AuditLog {
+  id              String    @id @default(uuid())
+  
+  userId          String?
+  user            User?     @relation(fields: [userId], references: [id])
+  
+  action          String    // CREATE, UPDATE, DELETE, LOGIN, etc.
+  entityType      String    // User, Book, Transaction, etc.
+  entityId        String?
+  
+  oldValue        Json?
+  newValue        Json?
+  
+  ipAddress       String?
+  userAgent       String?
+  
+  createdAt       DateTime  @default(now())
+  
+  @@index([userId])
+  @@index([entityType])
+  @@index([action])
+  @@index([createdAt])
+}
