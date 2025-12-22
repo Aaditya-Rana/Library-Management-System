@@ -70,8 +70,8 @@ describe('Auth E2E Tests', () => {
             });
 
             expect(user).toBeDefined();
-            expect(user.emailVerificationToken).toBeDefined();
-            expect(user.emailVerificationExpiry).toBeDefined();
+            expect(user?.emailVerificationToken).toBeDefined();
+            expect(user?.emailVerificationExpiry).toBeDefined();
         });
 
         it('should verify email with valid token', async () => {
@@ -229,6 +229,10 @@ describe('Auth E2E Tests', () => {
             const user = await prisma.user.findUnique({
                 where: { email: loginEmail },
             });
+
+            if (!user) {
+                throw new Error('User not found');
+            }
 
             await prisma.user.update({
                 where: { id: user.id },
