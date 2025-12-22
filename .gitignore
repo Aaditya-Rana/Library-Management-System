@@ -43,6 +43,7 @@ temp/
 *.tsbuildinfo
 
 # Internal documentation (not for repo)
+docs/.archive/
 docs/PHASE_*.md
 docs/*_ERRORS*.md
 docs/*_FIXED*.md
