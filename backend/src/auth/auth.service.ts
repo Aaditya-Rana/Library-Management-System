@@ -3,19 +3,23 @@ import {
     UnauthorizedException,
     ConflictException,
     ForbiddenException,
+    BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../common/services/prisma.service';
+import { EmailService } from '../common/services/email.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { UserRole, UserStatus } from '@prisma/client';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class AuthService {
     constructor(
         private prisma: PrismaService,
         private jwtService: JwtService,
+        private emailService: EmailService,
     ) { }
 
     async register(registerDto: RegisterDto) {
@@ -34,6 +38,14 @@ export class AuthService {
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
+        // Generate verification token
+        const verificationToken = crypto.randomBytes(32).toString('hex');
+        const hashedToken = crypto
+            .createHash('sha256')
+            .update(verificationToken)
+            .digest('hex');
+        const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
         // Create user
         const user = await this.prisma.user.create({
             data: {
@@ -45,6 +57,8 @@ export class AuthService {
                 dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
                 role: role || UserRole.USER,
                 status: UserStatus.PENDING_APPROVAL,
+                emailVerificationToken: hashedToken,
+                emailVerificationExpiry: tokenExpiry,
             },
             select: {
                 id: true,
@@ -53,13 +67,27 @@ export class AuthService {
                 lastName: true,
                 role: true,
                 status: true,
+                emailVerified: true,
                 createdAt: true,
             },
         });
 
+        // Send verification email
+        try {
+            await this.emailService.sendVerificationEmail(
+                email,
+                verificationToken,
+                `${firstName} ${lastName}`,
+            );
+        } catch (error) {
+            console.error('Failed to send verification email:', error);
+            // Don't fail registration if email fails
+        }
+
         return {
             success: true,
-            message: 'Registration successful. Awaiting admin approval.',
+            message:
+                'Registration successful. Please check your email to verify your account.',
             data: { user },
         };
     }
@@ -274,5 +302,104 @@ export class AuthService {
         } catch (error) {
             throw new UnauthorizedException('Invalid or expired reset token');
         }
+    }
+
+    async verifyEmail(token: string) {
+        // Hash the token to match stored hash
+        const hashedToken = crypto
+            .createHash('sha256')
+            .update(token)
+            .digest('hex');
+
+        // Find user with this token
+        const user = await this.prisma.user.findFirst({
+            where: {
+                emailVerificationToken: hashedToken,
+                emailVerificationExpiry: {
+                    gte: new Date(),
+                },
+            },
+        });
+
+        if (!user) {
+            throw new BadRequestException('Invalid or expired verification token');
+        }
+
+        // Update user - mark email as verified and clear token
+        await this.prisma.user.update({
+            where: { id: user.id },
+            data: {
+                emailVerified: true,
+                emailVerificationToken: null,
+                emailVerificationExpiry: null,
+            },
+        });
+
+        // Send welcome email
+        try {
+            await this.emailService.sendWelcomeEmail(
+                user.email,
+                `${user.firstName} ${user.lastName}`,
+            );
+        } catch (error) {
+            console.error('Failed to send welcome email:', error);
+        }
+
+        return {
+            success: true,
+            message: 'Email verified successfully',
+        };
+    }
+
+    async resendVerificationEmail(email: string) {
+        const user = await this.prisma.user.findUnique({
+            where: { email },
+        });
+
+        if (!user) {
+            // Don't reveal if user exists
+            return {
+                success: true,
+                message: 'If the email exists, a verification link has been sent',
+            };
+        }
+
+        if (user.emailVerified) {
+            throw new BadRequestException('Email already verified');
+        }
+
+        // Generate new verification token
+        const verificationToken = crypto.randomBytes(32).toString('hex');
+        const hashedToken = crypto
+            .createHash('sha256')
+            .update(verificationToken)
+            .digest('hex');
+        const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+        // Update user with new token
+        await this.prisma.user.update({
+            where: { id: user.id },
+            data: {
+                emailVerificationToken: hashedToken,
+                emailVerificationExpiry: tokenExpiry,
+            },
+        });
+
+        // Send verification email
+        try {
+            await this.emailService.sendVerificationEmail(
+                email,
+                verificationToken,
+                `${user.firstName} ${user.lastName}`,
+            );
+        } catch (error) {
+            console.error('Failed to send verification email:', error);
+            throw new Error('Failed to send verification email');
+        }
+
+        return {
+            success: true,
+            message: 'Verification email sent successfully',
+        };
     }
 }

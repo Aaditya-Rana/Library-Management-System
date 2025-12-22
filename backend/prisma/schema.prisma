@@ -132,8 +132,11 @@ model User {
   membershipExpiry  DateTime?
   
   // Settings
-  emailVerified     Boolean          @default(false)
-  twoFactorEnabled  Boolean          @default(false)
+  emailVerified              Boolean          @default(false)
+  emailVerificationToken     String?
+  emailVerificationExpiry    DateTime?
+  twoFactorEnabled           Boolean          @default(false)
+  twoFactorSecret            String?
   
   // Metadata
   createdAt         DateTime         @default(now())
