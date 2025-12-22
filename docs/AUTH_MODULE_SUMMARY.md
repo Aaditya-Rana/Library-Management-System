@@ -1,43 +1,23 @@
-# Authentication Module - Implementation Summary
+# Authentication API
 
-## ✅ Completed Features
+## Overview
+JWT-based authentication with role-based access control (RBAC).
 
-### Core Files Created (14 files)
-
-#### Module & Configuration
-- `auth/auth.module.ts` - Auth module with JWT and Passport configuration
-- `common/services/prisma.service.ts` - Database connection service
-
-#### DTOs (Data Transfer Objects)
-- `auth/dto/register.dto.ts` - Registration validation
-- `auth/dto/login.dto.ts` - Login validation
-
-#### Service & Controller
-- `auth/auth.service.ts` - Business logic for authentication
-- `auth/auth.controller.ts` - HTTP endpoints
-
-#### Security
-- `auth/strategies/jwt.strategy.ts` - JWT authentication strategy
-- `auth/guards/jwt-auth.guard.ts` - JWT route protection
-- `auth/guards/roles.guard.ts` - Role-based access control
-
-#### Decorators
-- `auth/decorators/roles.decorator.ts` - Role marking decorator
-- `common/decorators/get-user.decorator.ts` - User extraction decorator
-
-#### Tests
-- `auth/auth.service.spec.ts` - Service unit tests (9 tests)
-- `auth/auth.controller.spec.ts` - Controller unit tests (3 tests)
+## Base URL
+```
+http://localhost:3000/auth
+```
 
 ---
 
-## 🎯 API Endpoints
+## Endpoints
 
-### POST /auth/register
-**Access:** Public  
-**Purpose:** User registration
+### 1. Register User
+**POST** `/auth/register`
 
-**Request:**
+**Description:** Create a new user account (requires admin approval).
+
+**Request Body:**
 ```json
 {
   "email": "user@example.com",
@@ -48,7 +28,7 @@
 }
 ```
 
-**Response:**
+**Response:** `201 Created`
 ```json
 {
   "success": true,
@@ -64,11 +44,26 @@
 }
 ```
 
-### POST /auth/login
-**Access:** Public  
-**Purpose:** User login
+**Test with cURL:**
+```bash
+curl -X POST http://localhost:3000/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "password": "password123",
+    "firstName": "Test",
+    "lastName": "User"
+  }'
+```
 
-**Request:**
+---
+
+### 2. Login
+**POST** `/auth/login`
+
+**Description:** Authenticate user and receive JWT tokens.
+
+**Request Body:**
 ```json
 {
   "email": "user@example.com",
@@ -76,7 +71,7 @@
 }
 ```
 
-**Response:**
+**Response:** `200 OK`
 ```json
 {
   "success": true,
@@ -96,153 +91,92 @@
 }
 ```
 
----
-
-## 🔒 Security Features
-
-### Password Security
-- ✅ Bcrypt hashing with salt rounds = 10
-- ✅ Minimum 8 characters validation
-- ✅ Passwords never returned in responses
-
-### JWT Authentication
-- ✅ Access tokens (7 days expiry)
-- ✅ Refresh tokens (30 days expiry)
-- ✅ Secure secret from environment variables
-- ✅ Bearer token authentication
-
-### Authorization
-- ✅ Role-based access control (RBAC)
-- ✅ User status validation (ACTIVE, PENDING_APPROVAL, SUSPENDED, INACTIVE)
-- ✅ Route protection with guards
+**Test with cURL:**
+```bash
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "password": "password123"
+  }'
+```
 
 ---
 
-## 🧪 Testing
+## Authentication
 
-### Test Coverage
-- **Total Tests:** 12
-- **Passing:** 12 ✅
-- **Failing:** 0
+All protected endpoints require the JWT token in the Authorization header:
 
-### Test Suites
-1. **AuthService Tests** (9 tests)
-   - ✅ User registration success
-   - ✅ Duplicate email prevention
-   - ✅ Login success
-   - ✅ Invalid credentials handling
-   - ✅ Pending approval check
-   - ✅ Suspended account check
-   - ✅ User validation
-   - ✅ Token generation
-
-2. **AuthController Tests** (3 tests)
-   - ✅ Register endpoint
-   - ✅ Login endpoint
-   - ✅ Proper service integration
+```bash
+curl -X GET http://localhost:3000/protected-route \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
 
 ---
 
-## 🛡️ Guards & Decorators Usage
+## Error Responses
 
-### Protecting Routes with JWT
-```typescript
-@UseGuards(JwtAuthGuard)
-@Get('profile')
-getProfile(@GetUser() user) {
-  return user;
+### 400 Bad Request
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": [
+    {
+      "field": "email",
+      "message": "Invalid email format"
+    }
+  ]
 }
 ```
 
-### Role-Based Protection
-```typescript
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-@Get('admin-only')
-adminRoute() {
-  return 'Admin access';
+### 401 Unauthorized
+```json
+{
+  "success": false,
+  "message": "Invalid email or password"
 }
 ```
 
-### Getting Current User
-```typescript
-@UseGuards(JwtAuthGuard)
-@Get('me')
-getCurrentUser(@GetUser() user, @GetUser('email') email) {
-  return { user, email };
+### 403 Forbidden
+```json
+{
+  "success": false,
+  "message": "Your account is pending approval"
+}
+```
+
+### 409 Conflict
+```json
+{
+  "success": false,
+  "message": "Email already registered"
 }
 ```
 
 ---
 
-## 📊 Database Integration
+## Testing
 
-### Prisma Client
-- ✅ Generated successfully
-- ✅ Full type safety
-- ✅ All enums available (UserRole, UserStatus, etc.)
-
-### User Model Operations
-- ✅ Create user with hashed password
-- ✅ Find user by email
-- ✅ Update last login timestamp
-- ✅ Validate user status
-
----
-
-## ✨ Code Quality
-
-### Linting
-- ✅ ESLint passing
-- ⚠️ 1 warning (acceptable - any type in JWT payload)
-- ✅ Prettier formatted
-- ✅ Pre-commit hooks active
-
-### TypeScript
-- ✅ Strict type checking
-- ✅ No type errors
-- ✅ Full Prisma type integration
-
----
-
-## 🚀 Next Steps
-
-### Phase 2 Continuation
-1. **Users Module** - CRUD operations, user approval
-2. **Books Module** - Catalog management
-3. **Database Migration** - First migration with seed data
-
-### Future Enhancements
-- [ ] Password reset functionality
-- [ ] Email verification
-- [ ] Two-factor authentication
-- [ ] Refresh token rotation
-- [ ] Account lockout after failed attempts
-
----
-
-## 📝 Git Commit
-
-```
-feat(auth): implement authentication module with JWT and role-based access control
-
-- Add AuthModule with JWT strategy and Passport integration
-- Implement register and login endpoints with validation
-- Add password hashing with bcrypt
-- Create JWT and Roles guards for route protection
-- Add GetUser and Roles decorators
-- Implement PrismaService for database connection
-- Add comprehensive unit tests (12 tests passing)
-- Generate Prisma client for type safety
+### Run Tests
+```bash
+cd backend
+npm run test -- auth
 ```
 
-**Branch:** develop  
-**Files Changed:** 14 files  
-**Lines Added:** ~800  
-**Tests:** 12 passing ✅
+### Start Development Server
+```bash
+cd backend
+npm run start:dev
+```
+
+Server runs on: `http://localhost:3000`
 
 ---
 
-**Status:** ✅ Complete  
-**Date:** 2025-12-22  
-**Phase:** 2 - Backend Core
+## Security Features
+- ✅ Password hashing with bcrypt
+- ✅ JWT tokens (7-day access, 30-day refresh)
+- ✅ Role-based access control
+- ✅ User status validation
+- ✅ Input validation with class-validator

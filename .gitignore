@@ -41,3 +41,10 @@ temp/
 
 # Build
 *.tsbuildinfo
+
+# Internal documentation (not for repo)
+docs/PHASE_*.md
+docs/*_ERRORS*.md
+docs/*_FIXED*.md
+docs/FIX_*.md
+.gemini/
