@@ -88,11 +88,17 @@ npm run test:cov
 
 ## 📖 Documentation
 
-- [API Documentation](./API_DOCUMENTATION.md) - Complete API reference
-- [Implementation Plan](./IMPLEMENTATION_PLAN.md) - Development roadmap
-- [System Workflows](./SYSTEM_CONFIGURATION_AND_WORKFLOWS.md) - User flows
-- [Revenue Model](./REVENUE_MODEL.md) - Business model
-- [Home Delivery Feature](./HOME_DELIVERY_FEATURE.md) - Delivery system details
+All project documentation is organized in the [`docs/`](./docs/) folder:
+
+- [API Documentation](./docs/API_DOCUMENTATION.md) - Complete API reference with 87 endpoints
+- [Implementation Plan](./docs/IMPLEMENTATION_PLAN.md) - 15-week development roadmap
+- [System Workflows](./docs/SYSTEM_CONFIGURATION_AND_WORKFLOWS.md) - User flows and configurations
+- [Revenue Model](./docs/REVENUE_MODEL.md) - Business model with financial projections
+- [Home Delivery Feature](./docs/HOME_DELIVERY_FEATURE.md) - Delivery system specification
+- [Brainstorming](./docs/BRAINSTORMING.md) - Initial planning and feature overview
+- [Phase 1 Summary](./docs/PHASE_1_SUMMARY.md) - Setup completion summary
+
+See [`docs/README.md`](./docs/README.md) for a complete guide to all documentation.
 
 ## 🔀 Git Workflow
 
