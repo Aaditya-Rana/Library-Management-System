@@ -5,78 +5,78 @@ import { Transporter } from 'nodemailer';
 
 @Injectable()
 export class EmailService {
-    private transporter: Transporter;
+  private transporter: Transporter;
 
-    constructor(private configService: ConfigService) {
-        this.transporter = nodemailer.createTransport({
-            host: this.configService.get('SMTP_HOST'),
-            port: this.configService.get('SMTP_PORT'),
-            secure: false, // true for 465, false for other ports
-            auth: {
-                user: this.configService.get('SMTP_USER'),
-                pass: this.configService.get('SMTP_PASSWORD'),
-            },
-        });
+  constructor(private configService: ConfigService) {
+    this.transporter = nodemailer.createTransport({
+      host: this.configService.get('SMTP_HOST'),
+      port: this.configService.get('SMTP_PORT'),
+      secure: false, // true for 465, false for other ports
+      auth: {
+        user: this.configService.get('SMTP_USER'),
+        pass: this.configService.get('SMTP_PASS'),
+      },
+    });
+  }
+
+  async sendVerificationEmail(email: string, token: string, name: string) {
+    const verificationUrl = `${this.configService.get('FRONTEND_URL') || 'http://localhost:3001'}/verify-email?token=${token}`;
+
+    const mailOptions = {
+      from: this.configService.get('SMTP_FROM'),
+      to: email,
+      subject: 'Verify Your Email - Library Management System',
+      html: this.getVerificationEmailTemplate(name, verificationUrl),
+    };
+
+    try {
+      await this.transporter.sendMail(mailOptions);
+      return { success: true };
+    } catch (error) {
+      console.error('Error sending verification email:', error);
+      throw new Error('Failed to send verification email');
     }
+  }
 
-    async sendVerificationEmail(email: string, token: string, name: string) {
-        const verificationUrl = `${this.configService.get('FRONTEND_URL') || 'http://localhost:3001'}/verify-email?token=${token}`;
+  async sendPasswordResetEmail(email: string, token: string, name: string) {
+    const resetUrl = `${this.configService.get('FRONTEND_URL') || 'http://localhost:3001'}/reset-password?token=${token}`;
 
-        const mailOptions = {
-            from: this.configService.get('SMTP_FROM'),
-            to: email,
-            subject: 'Verify Your Email - Library Management System',
-            html: this.getVerificationEmailTemplate(name, verificationUrl),
-        };
+    const mailOptions = {
+      from: this.configService.get('SMTP_FROM'),
+      to: email,
+      subject: 'Reset Your Password - Library Management System',
+      html: this.getPasswordResetEmailTemplate(name, resetUrl),
+    };
 
-        try {
-            await this.transporter.sendMail(mailOptions);
-            return { success: true };
-        } catch (error) {
-            console.error('Error sending verification email:', error);
-            throw new Error('Failed to send verification email');
-        }
+    try {
+      await this.transporter.sendMail(mailOptions);
+      return { success: true };
+    } catch (error) {
+      console.error('Error sending password reset email:', error);
+      throw new Error('Failed to send password reset email');
     }
+  }
 
-    async sendPasswordResetEmail(email: string, token: string, name: string) {
-        const resetUrl = `${this.configService.get('FRONTEND_URL') || 'http://localhost:3001'}/reset-password?token=${token}`;
+  async sendWelcomeEmail(email: string, name: string) {
+    const mailOptions = {
+      from: this.configService.get('SMTP_FROM'),
+      to: email,
+      subject: 'Welcome to Library Management System',
+      html: this.getWelcomeEmailTemplate(name),
+    };
 
-        const mailOptions = {
-            from: this.configService.get('SMTP_FROM'),
-            to: email,
-            subject: 'Reset Your Password - Library Management System',
-            html: this.getPasswordResetEmailTemplate(name, resetUrl),
-        };
-
-        try {
-            await this.transporter.sendMail(mailOptions);
-            return { success: true };
-        } catch (error) {
-            console.error('Error sending password reset email:', error);
-            throw new Error('Failed to send password reset email');
-        }
+    try {
+      await this.transporter.sendMail(mailOptions);
+      return { success: true };
+    } catch (error) {
+      console.error('Error sending welcome email:', error);
+      // Don't throw error for welcome email
+      return { success: false };
     }
+  }
 
-    async sendWelcomeEmail(email: string, name: string) {
-        const mailOptions = {
-            from: this.configService.get('SMTP_FROM'),
-            to: email,
-            subject: 'Welcome to Library Management System',
-            html: this.getWelcomeEmailTemplate(name),
-        };
-
-        try {
-            await this.transporter.sendMail(mailOptions);
-            return { success: true };
-        } catch (error) {
-            console.error('Error sending welcome email:', error);
-            // Don't throw error for welcome email
-            return { success: false };
-        }
-    }
-
-    private getVerificationEmailTemplate(name: string, verificationUrl: string): string {
-        return `
+  private getVerificationEmailTemplate(name: string, verificationUrl: string): string {
+    return `
       <!DOCTYPE html>
       <html>
       <head>
@@ -111,10 +111,10 @@ export class EmailService {
       </body>
       </html>
     `;
-    }
+  }
 
-    private getPasswordResetEmailTemplate(name: string, resetUrl: string): string {
-        return `
+  private getPasswordResetEmailTemplate(name: string, resetUrl: string): string {
+    return `
       <!DOCTYPE html>
       <html>
       <head>
@@ -149,10 +149,10 @@ export class EmailService {
       </body>
       </html>
     `;
-    }
+  }
 
-    private getWelcomeEmailTemplate(name: string): string {
-        return `
+  private getWelcomeEmailTemplate(name: string): string {
+    return `
       <!DOCTYPE html>
       <html>
       <head>
@@ -189,5 +189,5 @@ export class EmailService {
       </body>
       </html>
     `;
-    }
+  }
 }
