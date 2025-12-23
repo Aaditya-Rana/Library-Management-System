@@ -431,6 +431,7 @@ describe('UsersService', () => {
             const mockUser = {
                 id: '2',
                 email: 'user@example.com',
+                role: UserRole.USER,
             };
 
             mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
@@ -439,7 +440,7 @@ describe('UsersService', () => {
                 status: UserStatus.INACTIVE,
             });
 
-            const result = await service.remove('2', '1');
+            const result = await service.remove('2', '1', UserRole.ADMIN);
 
             expect(result.success).toBe(true);
             expect(result.message).toBe('User deleted successfully');
@@ -452,7 +453,7 @@ describe('UsersService', () => {
         it('should throw NotFoundException if user not found', async () => {
             mockPrismaService.user.findUnique.mockResolvedValue(null);
 
-            await expect(service.remove('999', '1')).rejects.toThrow(
+            await expect(service.remove('999', '1', UserRole.ADMIN)).rejects.toThrow(
                 NotFoundException,
             );
         });
@@ -461,13 +462,60 @@ describe('UsersService', () => {
             const mockUser = {
                 id: '1',
                 email: 'user@example.com',
+                role: UserRole.ADMIN,
             };
 
             mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
 
-            await expect(service.remove('1', '1')).rejects.toThrow(
+            await expect(service.remove('1', '1', UserRole.ADMIN)).rejects.toThrow(
                 ForbiddenException,
             );
+        });
+
+        it('should prevent ADMIN from deleting SUPER_ADMIN users', async () => {
+            const mockUser = {
+                id: '2',
+                email: 'superadmin@example.com',
+                role: UserRole.SUPER_ADMIN,
+            };
+
+            mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
+
+            await expect(service.remove('2', '1', UserRole.ADMIN)).rejects.toThrow(
+                ForbiddenException,
+            );
+        });
+
+        it('should prevent ADMIN from deleting other ADMIN users', async () => {
+            const mockUser = {
+                id: '2',
+                email: 'admin@example.com',
+                role: UserRole.ADMIN,
+            };
+
+            mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
+
+            await expect(service.remove('2', '1', UserRole.ADMIN)).rejects.toThrow(
+                ForbiddenException,
+            );
+        });
+
+        it('should allow SUPER_ADMIN to delete ADMIN users', async () => {
+            const mockUser = {
+                id: '2',
+                email: 'admin@example.com',
+                role: UserRole.ADMIN,
+            };
+
+            mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
+            mockPrismaService.user.update.mockResolvedValue({
+                ...mockUser,
+                status: UserStatus.INACTIVE,
+            });
+
+            const result = await service.remove('2', '1', UserRole.SUPER_ADMIN);
+
+            expect(result.success).toBe(true);
         });
     });
 
@@ -476,6 +524,7 @@ describe('UsersService', () => {
             const mockUser = {
                 id: '1',
                 email: 'user@example.com',
+                role: UserRole.USER,
                 status: UserStatus.PENDING_APPROVAL,
             };
 
@@ -490,7 +539,7 @@ describe('UsersService', () => {
             mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
             mockPrismaService.user.update.mockResolvedValue(mockApprovedUser);
 
-            const result = await service.approveUser('1');
+            const result = await service.approveUser('1', UserRole.ADMIN);
 
             expect(result.success).toBe(true);
             expect(result.message).toBe('User approved successfully');
@@ -500,7 +549,7 @@ describe('UsersService', () => {
         it('should throw NotFoundException if user not found', async () => {
             mockPrismaService.user.findUnique.mockResolvedValue(null);
 
-            await expect(service.approveUser('999')).rejects.toThrow(
+            await expect(service.approveUser('999', UserRole.ADMIN)).rejects.toThrow(
                 NotFoundException,
             );
         });
@@ -514,7 +563,7 @@ describe('UsersService', () => {
 
             mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
 
-            await expect(service.approveUser('1')).rejects.toThrow(
+            await expect(service.approveUser('1', UserRole.ADMIN)).rejects.toThrow(
                 BadRequestException,
             );
         });
@@ -525,6 +574,7 @@ describe('UsersService', () => {
             const mockUser = {
                 id: '1',
                 email: 'user@example.com',
+                role: UserRole.USER,
                 status: UserStatus.ACTIVE,
             };
 
@@ -534,7 +584,7 @@ describe('UsersService', () => {
                 status: UserStatus.SUSPENDED,
             });
 
-            const result = await service.suspendUser('1', 'Violation of terms');
+            const result = await service.suspendUser('1', UserRole.ADMIN, 'Violation of terms');
 
             expect(result.success).toBe(true);
             expect(result.message).toBe('User suspended successfully');
@@ -543,7 +593,7 @@ describe('UsersService', () => {
         it('should throw NotFoundException if user not found', async () => {
             mockPrismaService.user.findUnique.mockResolvedValue(null);
 
-            await expect(service.suspendUser('999')).rejects.toThrow(
+            await expect(service.suspendUser('999', UserRole.ADMIN)).rejects.toThrow(
                 NotFoundException,
             );
         });
@@ -557,7 +607,7 @@ describe('UsersService', () => {
 
             mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
 
-            await expect(service.suspendUser('1')).rejects.toThrow(
+            await expect(service.suspendUser('1', UserRole.ADMIN)).rejects.toThrow(
                 BadRequestException,
             );
         });
@@ -568,6 +618,7 @@ describe('UsersService', () => {
             const mockUser = {
                 id: '1',
                 email: 'user@example.com',
+                role: UserRole.USER,
                 status: UserStatus.SUSPENDED,
             };
 
@@ -582,7 +633,7 @@ describe('UsersService', () => {
             mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
             mockPrismaService.user.update.mockResolvedValue(mockActivatedUser);
 
-            const result = await service.activateUser('1');
+            const result = await service.activateUser('1', UserRole.ADMIN);
 
             expect(result.success).toBe(true);
             expect(result.message).toBe('User activated successfully');
@@ -592,7 +643,7 @@ describe('UsersService', () => {
         it('should throw NotFoundException if user not found', async () => {
             mockPrismaService.user.findUnique.mockResolvedValue(null);
 
-            await expect(service.activateUser('999')).rejects.toThrow(
+            await expect(service.activateUser('999', UserRole.ADMIN)).rejects.toThrow(
                 NotFoundException,
             );
         });
@@ -606,7 +657,7 @@ describe('UsersService', () => {
 
             mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
 
-            await expect(service.activateUser('1')).rejects.toThrow(
+            await expect(service.activateUser('1', UserRole.ADMIN)).rejects.toThrow(
                 BadRequestException,
             );
         });

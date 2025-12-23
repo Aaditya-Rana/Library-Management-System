@@ -285,10 +285,10 @@ describe('UsersController', () => {
 
             mockUsersService.remove.mockResolvedValue(expectedResult);
 
-            const result = await controller.remove(userId, requestingUserId);
+            const result = await controller.remove(userId, requestingUserId, UserRole.ADMIN);
 
             expect(result).toEqual(expectedResult);
-            expect(service.remove).toHaveBeenCalledWith(userId, requestingUserId);
+            expect(service.remove).toHaveBeenCalledWith(userId, requestingUserId, UserRole.ADMIN);
         });
     });
 
@@ -309,10 +309,10 @@ describe('UsersController', () => {
 
             mockUsersService.approveUser.mockResolvedValue(expectedResult);
 
-            const result = await controller.approve(userId);
+            const result = await controller.approve(userId, UserRole.ADMIN);
 
             expect(result).toEqual(expectedResult);
-            expect(service.approveUser).toHaveBeenCalledWith(userId);
+            expect(service.approveUser).toHaveBeenCalledWith(userId, UserRole.ADMIN);
         });
     });
 
@@ -330,11 +330,12 @@ describe('UsersController', () => {
 
             mockUsersService.suspendUser.mockResolvedValue(expectedResult);
 
-            const result = await controller.suspend(userId, suspendUserDto);
+            const result = await controller.suspend(userId, UserRole.ADMIN, suspendUserDto);
 
             expect(result).toEqual(expectedResult);
             expect(service.suspendUser).toHaveBeenCalledWith(
                 userId,
+                UserRole.ADMIN,
                 suspendUserDto.reason,
             );
         });
@@ -350,10 +351,10 @@ describe('UsersController', () => {
 
             mockUsersService.suspendUser.mockResolvedValue(expectedResult);
 
-            const result = await controller.suspend(userId, suspendUserDto);
+            const result = await controller.suspend(userId, UserRole.ADMIN, suspendUserDto);
 
             expect(result).toEqual(expectedResult);
-            expect(service.suspendUser).toHaveBeenCalledWith(userId, undefined);
+            expect(service.suspendUser).toHaveBeenCalledWith(userId, UserRole.ADMIN, undefined);
         });
     });
 
@@ -374,10 +375,10 @@ describe('UsersController', () => {
 
             mockUsersService.activateUser.mockResolvedValue(expectedResult);
 
-            const result = await controller.activate(userId);
+            const result = await controller.activate(userId, UserRole.ADMIN);
 
             expect(result).toEqual(expectedResult);
-            expect(service.activateUser).toHaveBeenCalledWith(userId);
+            expect(service.activateUser).toHaveBeenCalledWith(userId, UserRole.ADMIN);
         });
     });
 });

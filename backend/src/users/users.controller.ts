@@ -100,16 +100,20 @@ export class UsersController {
     async remove(
         @Param('id') id: string,
         @GetUser('id') requestingUserId: string,
+        @GetUser('role') requestingUserRole: UserRole,
     ) {
-        return this.usersService.remove(id, requestingUserId);
+        return this.usersService.remove(id, requestingUserId, requestingUserRole);
     }
 
     @Post(':id/approve')
     @UseGuards(RolesGuard)
     @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
-    async approve(@Param('id') id: string) {
-        return this.usersService.approveUser(id);
+    async approve(
+        @Param('id') id: string,
+        @GetUser('role') requestingUserRole: UserRole,
+    ) {
+        return this.usersService.approveUser(id, requestingUserRole);
     }
 
     @Post(':id/suspend')
@@ -118,16 +122,20 @@ export class UsersController {
     @HttpCode(HttpStatus.OK)
     async suspend(
         @Param('id') id: string,
+        @GetUser('role') requestingUserRole: UserRole,
         @Body() suspendUserDto: SuspendUserDto,
     ) {
-        return this.usersService.suspendUser(id, suspendUserDto.reason);
+        return this.usersService.suspendUser(id, requestingUserRole, suspendUserDto.reason);
     }
 
     @Post(':id/activate')
     @UseGuards(RolesGuard)
     @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
-    async activate(@Param('id') id: string) {
-        return this.usersService.activateUser(id);
+    async activate(
+        @Param('id') id: string,
+        @GetUser('role') requestingUserRole: UserRole,
+    ) {
+        return this.usersService.activateUser(id, requestingUserRole);
     }
 }

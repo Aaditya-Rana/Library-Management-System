@@ -265,7 +265,7 @@ export class UsersService {
         };
     }
 
-    async remove(id: string, requestingUserId: string) {
+    async remove(id: string, requestingUserId: string, requestingUserRole: UserRole) {
         // Check if user exists
         const user = await this.prisma.user.findUnique({ where: { id } });
         if (!user) {
@@ -275,6 +275,15 @@ export class UsersService {
         // Prevent deleting own account
         if (id === requestingUserId) {
             throw new ForbiddenException('Cannot delete your own account');
+        }
+
+        // Role-based restrictions: ADMIN cannot delete SUPER_ADMIN or other ADMINs
+        if (requestingUserRole === UserRole.ADMIN) {
+            if (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.ADMIN) {
+                throw new ForbiddenException(
+                    'Admins cannot delete SUPER_ADMIN or ADMIN users. Only SUPER_ADMIN can delete these roles.',
+                );
+            }
         }
 
         // Soft delete by setting status to INACTIVE
@@ -289,7 +298,7 @@ export class UsersService {
         };
     }
 
-    async approveUser(id: string) {
+    async approveUser(id: string, requestingUserRole: UserRole) {
         const user = await this.prisma.user.findUnique({ where: { id } });
 
         if (!user) {
@@ -300,6 +309,15 @@ export class UsersService {
             throw new BadRequestException(
                 'User is not pending approval',
             );
+        }
+
+        // Role-based restrictions: ADMIN cannot approve SUPER_ADMIN or ADMIN users
+        if (requestingUserRole === UserRole.ADMIN) {
+            if (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.ADMIN) {
+                throw new ForbiddenException(
+                    'Admins cannot approve SUPER_ADMIN or ADMIN users. Only SUPER_ADMIN can approve these roles.',
+                );
+            }
         }
 
         const updatedUser = await this.prisma.user.update({
@@ -323,7 +341,7 @@ export class UsersService {
         };
     }
 
-    async suspendUser(id: string, _reason?: string) {
+    async suspendUser(id: string, requestingUserRole: UserRole, _reason?: string) {
         const user = await this.prisma.user.findUnique({ where: { id } });
 
         if (!user) {
@@ -332,6 +350,15 @@ export class UsersService {
 
         if (user.status === UserStatus.SUSPENDED) {
             throw new BadRequestException('User is already suspended');
+        }
+
+        // Role-based restrictions: ADMIN cannot suspend SUPER_ADMIN or other ADMINs
+        if (requestingUserRole === UserRole.ADMIN) {
+            if (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.ADMIN) {
+                throw new ForbiddenException(
+                    'Admins cannot suspend SUPER_ADMIN or ADMIN users. Only SUPER_ADMIN can suspend these roles.',
+                );
+            }
         }
 
         await this.prisma.user.update({
@@ -348,7 +375,7 @@ export class UsersService {
         };
     }
 
-    async activateUser(id: string) {
+    async activateUser(id: string, requestingUserRole: UserRole) {
         const user = await this.prisma.user.findUnique({ where: { id } });
 
         if (!user) {
@@ -357,6 +384,15 @@ export class UsersService {
 
         if (user.status === UserStatus.ACTIVE) {
             throw new BadRequestException('User is already active');
+        }
+
+        // Role-based restrictions: ADMIN cannot activate SUPER_ADMIN or ADMIN users
+        if (requestingUserRole === UserRole.ADMIN) {
+            if (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.ADMIN) {
+                throw new ForbiddenException(
+                    'Admins cannot activate SUPER_ADMIN or ADMIN users. Only SUPER_ADMIN can activate these roles.',
+                );
+            }
         }
 
         const updatedUser = await this.prisma.user.update({
