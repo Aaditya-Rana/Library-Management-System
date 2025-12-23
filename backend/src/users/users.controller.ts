@@ -29,7 +29,7 @@ export class UsersController {
 
     @Post()
     @UseGuards(RolesGuard)
-    @Roles(UserRole.ADMIN)
+    @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
     @HttpCode(HttpStatus.CREATED)
     async create(@Body() createUserDto: CreateUserDto) {
         return this.usersService.create(createUserDto);
@@ -37,7 +37,7 @@ export class UsersController {
 
     @Get()
     @UseGuards(RolesGuard)
-    @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
+    @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.LIBRARIAN)
     @HttpCode(HttpStatus.OK)
     async findAll(@Query() queryDto: QueryUsersDto) {
         return this.usersService.findAll(queryDto);
@@ -66,8 +66,9 @@ export class UsersController {
         @GetUser('id') requestingUserId: string,
         @GetUser('role') role: UserRole,
     ) {
-        // Admin and Librarian can view any user, regular users can only view themselves
+        // Super Admin, Admin and Librarian can view any user, regular users can only view themselves
         if (
+            role !== UserRole.SUPER_ADMIN &&
             role !== UserRole.ADMIN &&
             role !== UserRole.LIBRARIAN &&
             id !== requestingUserId
@@ -91,7 +92,7 @@ export class UsersController {
 
     @Delete(':id')
     @UseGuards(RolesGuard)
-    @Roles(UserRole.ADMIN)
+    @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async remove(
         @Param('id') id: string,
@@ -102,7 +103,7 @@ export class UsersController {
 
     @Post(':id/approve')
     @UseGuards(RolesGuard)
-    @Roles(UserRole.ADMIN)
+    @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async approve(@Param('id') id: string) {
         return this.usersService.approveUser(id);
@@ -110,7 +111,7 @@ export class UsersController {
 
     @Post(':id/suspend')
     @UseGuards(RolesGuard)
-    @Roles(UserRole.ADMIN)
+    @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async suspend(
         @Param('id') id: string,
@@ -121,7 +122,7 @@ export class UsersController {
 
     @Post(':id/activate')
     @UseGuards(RolesGuard)
-    @Roles(UserRole.ADMIN)
+    @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async activate(@Param('id') id: string) {
         return this.usersService.activateUser(id);

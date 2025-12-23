@@ -207,8 +207,12 @@ export class UsersService {
             throw new NotFoundException('User not found');
         }
 
-        // Check authorization: admin can update anyone, users can only update themselves
-        if (requestingUserRole !== UserRole.ADMIN && id !== requestingUserId) {
+        // Check authorization: super admin and admin can update anyone, users can only update themselves
+        if (
+            requestingUserRole !== UserRole.SUPER_ADMIN &&
+            requestingUserRole !== UserRole.ADMIN &&
+            id !== requestingUserId
+        ) {
             throw new ForbiddenException('Cannot update other users');
         }
 
