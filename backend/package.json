@@ -21,7 +21,6 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "create-super-admin": "ts-node -r tsconfig-paths/register scripts/create-super-admin.ts",
     "prepare": "husky"
   },
   "lint-staged": {
