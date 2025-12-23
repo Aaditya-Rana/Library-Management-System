@@ -57,6 +57,12 @@ jobs:
         working-directory: backend
         run: npx prisma generate
       
+      - name: Run Prisma migrations
+        working-directory: backend
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/library_test
+      
       - name: Run unit tests
         working-directory: backend
         run: npm run test:cov
