@@ -5,6 +5,7 @@ Complete Postman collection for testing the Library Management System APIs.
 ## 📦 Files
 
 - **`auth-collection.json`** - Authentication API collection with automated tests
+- **`users-collection.json`** - Users Management API collection with automated tests
 - **`environment-local.json`** - Local development environment variables
 
 ## 🚀 Quick Start
@@ -64,6 +65,25 @@ npm run start:dev
 | `/auth/reset-password` | POST | Reset password | 3 tests |
 
 **Total: 19 automated tests**
+
+### Users Management (9 endpoints)
+
+| Endpoint | Method | Description | Auto Tests |
+|----------|--------|-------------|------------|
+| `/users` | POST | Create user (Admin/Super Admin) | 5 tests |
+| `/users` | GET | List all users (paginated) | 3 tests |
+| `/users/me` | GET | Get current user profile | 2 tests |
+| `/users/:id` | GET | Get user by ID | 2 tests |
+| `/users/me` | PATCH | Update own profile | 2 tests |
+| `/users/:id` | PATCH | Update user (Admin) | 2 tests |
+| `/users/:id/approve` | POST | Approve pending user | 2 tests |
+| `/users/:id/suspend` | POST | Suspend user account | 2 tests |
+| `/users/:id/activate` | POST | Activate user account | 2 tests |
+| `/users/:id` | DELETE | Delete user (soft delete) | 2 tests |
+
+**Total: 24 automated tests**
+
+**Grand Total: 43 automated tests across both collections**
 
 ## 🧪 Automated Tests
 
