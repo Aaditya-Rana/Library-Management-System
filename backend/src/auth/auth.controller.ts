@@ -1,10 +1,11 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Get, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ResendVerificationDto } from './dto/resend-verification.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -41,5 +42,17 @@ export class AuthController {
             resetPasswordDto.token,
             resetPasswordDto.newPassword,
         );
+    }
+
+    @Get('verify-email')
+    @HttpCode(HttpStatus.OK)
+    async verifyEmail(@Query('token') token: string) {
+        return this.authService.verifyEmail(token);
+    }
+
+    @Post('resend-verification')
+    @HttpCode(HttpStatus.OK)
+    async resendVerification(@Body() resendVerificationDto: ResendVerificationDto) {
+        return this.authService.resendVerificationEmail(resendVerificationDto.email);
     }
 }

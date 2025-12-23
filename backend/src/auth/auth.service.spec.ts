@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../common/services/prisma.service';
+import { EmailService } from '../common/services/email.service';
 import { ConflictException, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import { UserRole, UserStatus } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
@@ -25,6 +26,12 @@ describe('AuthService', () => {
         sign: jest.fn(),
     };
 
+    const mockEmailService = {
+        sendVerificationEmail: jest.fn().mockResolvedValue({ success: true }),
+        sendPasswordResetEmail: jest.fn().mockResolvedValue({ success: true }),
+        sendWelcomeEmail: jest.fn().mockResolvedValue({ success: true }),
+    };
+
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
@@ -36,6 +43,10 @@ describe('AuthService', () => {
                 {
                     provide: JwtService,
                     useValue: mockJwtService,
+                },
+                {
+                    provide: EmailService,
+                    useValue: mockEmailService,
                 },
             ],
         }).compile();

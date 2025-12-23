@@ -206,6 +206,70 @@ curl -X POST http://localhost:3000/auth/reset-password \
 
 ---
 
+### 6. Verify Email
+**GET** `/auth/verify-email`
+
+**Description:** Verify email address using token from verification email.
+
+**Query Parameters:**
+- `token` (string, required) - Verification token from email
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "message": "Email verified successfully"
+}
+```
+
+**Test with cURL:**
+```bash
+curl -X GET "http://localhost:3000/auth/verify-email?token=YOUR_VERIFICATION_TOKEN"
+```
+
+**Notes:**
+- Token expires after 24 hours
+- Token is one-time use only
+- Welcome email sent after successful verification
+
+---
+
+### 7. Resend Verification Email
+**POST** `/auth/resend-verification`
+
+**Description:** Resend verification email to unverified user.
+
+**Request Body:**
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "message": "Verification email sent successfully"
+}
+```
+
+**Test with cURL:**
+```bash
+curl -X POST http://localhost:3000/auth/resend-verification \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com"
+  }'
+```
+
+**Notes:**
+- Returns success even if email doesn't exist (security)
+- Fails if email is already verified
+- Generates new token with 24-hour expiry
+
+---
+
 ## Authentication
 
 All protected endpoints require the JWT token in the Authorization header:

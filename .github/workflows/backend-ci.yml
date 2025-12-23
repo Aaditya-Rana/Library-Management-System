@@ -32,7 +32,7 @@ jobs:
     
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
+        node-version: [20.x]
     
     steps:
       - name: Checkout code
@@ -56,6 +56,12 @@ jobs:
       - name: Run Prisma generate
         working-directory: backend
         run: npx prisma generate
+      
+      - name: Setup database schema
+        working-directory: backend
+        run: npx prisma db push --accept-data-loss
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/library_test
       
       - name: Run unit tests
         working-directory: backend
