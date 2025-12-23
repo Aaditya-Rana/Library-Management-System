@@ -4,6 +4,7 @@ import request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { PrismaService } from '../src/common/services/prisma.service';
 import { UserRole, UserStatus } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 describe('Users E2E Tests', () => {
     let app: INestApplication;
@@ -36,7 +37,6 @@ describe('Users E2E Tests', () => {
         });
 
         // Create test users with different roles
-        const bcrypt = require('bcrypt');
         const hashedPassword = await bcrypt.hash('Test123!@#', 10);
 
         // Create admin user
@@ -257,7 +257,7 @@ describe('Users E2E Tests', () => {
                 .expect(200);
 
             expect(response.body.success).toBe(true);
-            response.body.data.users.forEach((user: any) => {
+            response.body.data.users.forEach((user: { role: UserRole }) => {
                 expect(user.role).toBe(UserRole.ADMIN);
             });
         });
@@ -269,7 +269,7 @@ describe('Users E2E Tests', () => {
                 .expect(200);
 
             expect(response.body.success).toBe(true);
-            response.body.data.users.forEach((user: any) => {
+            response.body.data.users.forEach((user: { status: UserStatus }) => {
                 expect(user.status).toBe(UserStatus.ACTIVE);
             });
         });
@@ -397,7 +397,6 @@ describe('Users E2E Tests', () => {
     describe('POST /users/:id/approve - Approve User', () => {
         it('should approve pending user as admin', async () => {
             // Create pending user
-            const bcrypt = require('bcrypt');
             const hashedPassword = await bcrypt.hash('Test123!@#', 10);
 
             const pendingUser = await prisma.user.create({
@@ -432,7 +431,6 @@ describe('Users E2E Tests', () => {
     describe('POST /users/:id/suspend - Suspend User', () => {
         it('should suspend user as admin', async () => {
             // Create user to suspend
-            const bcrypt = require('bcrypt');
             const hashedPassword = await bcrypt.hash('Test123!@#', 10);
 
             const userToSuspend = await prisma.user.create({
@@ -478,7 +476,6 @@ describe('Users E2E Tests', () => {
     describe('POST /users/:id/activate - Activate User', () => {
         it('should activate suspended user as admin', async () => {
             // Create suspended user
-            const bcrypt = require('bcrypt');
             const hashedPassword = await bcrypt.hash('Test123!@#', 10);
 
             const suspendedUser = await prisma.user.create({
@@ -513,7 +510,6 @@ describe('Users E2E Tests', () => {
     describe('DELETE /users/:id - Delete User', () => {
         it('should delete user as admin', async () => {
             // Create user to delete
-            const bcrypt = require('bcrypt');
             const hashedPassword = await bcrypt.hash('Test123!@#', 10);
 
             const userToDelete = await prisma.user.create({

@@ -10,7 +10,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { QueryUsersDto } from './dto/query-users.dto';
 import * as bcrypt from 'bcrypt';
-import { UserRole, UserStatus } from '@prisma/client';
+import { UserRole, UserStatus, MembershipType } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
@@ -31,7 +31,16 @@ export class UsersService {
         const skip = (page - 1) * limit;
 
         // Build where clause
-        const where: any = {};
+        const where: {
+            role?: UserRole;
+            status?: UserStatus;
+            membershipType?: MembershipType;
+            OR?: Array<{
+                firstName?: { contains: string; mode: 'insensitive' };
+                lastName?: { contains: string; mode: 'insensitive' };
+                email?: { contains: string; mode: 'insensitive' };
+            }>;
+        } = {};
 
         if (role) {
             where.role = role;
@@ -294,7 +303,7 @@ export class UsersService {
         };
     }
 
-    async suspendUser(id: string, reason?: string) {
+    async suspendUser(id: string, _reason?: string) {
         const user = await this.prisma.user.findUnique({ where: { id } });
 
         if (!user) {

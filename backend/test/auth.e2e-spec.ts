@@ -41,6 +41,7 @@ describe('Auth E2E Tests', () => {
             },
         });
 
+        await prisma.$disconnect();
         await app.close();
     });
 
