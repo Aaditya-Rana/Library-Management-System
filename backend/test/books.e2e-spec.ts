@@ -3,6 +3,8 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { PrismaService } from '../src/common/services/prisma.service';
+import { EmailService } from '../src/common/services/email.service';
+import { MockEmailService } from './mocks/mock-email.service';
 
 describe('Books E2E Tests', () => {
     let app: INestApplication;
@@ -15,7 +17,10 @@ describe('Books E2E Tests', () => {
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
             imports: [AppModule],
-        }).compile();
+        })
+            .overrideProvider(EmailService)
+            .useClass(MockEmailService)
+            .compile();
 
         app = moduleFixture.createNestApplication();
         app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
@@ -142,6 +147,10 @@ describe('Books E2E Tests', () => {
                     availableCopies: 5,
                     price: 299.99,
                     bookValue: 500,
+                    securityDeposit: 200,
+                    loanPeriodDays: 14,
+                    finePerDay: 5,
+                    maxRenewals: 2,
                     description: 'A test book',
                 });
 
