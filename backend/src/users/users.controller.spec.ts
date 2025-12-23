@@ -67,10 +67,10 @@ describe('UsersController', () => {
 
             mockUsersService.create.mockResolvedValue(expectedResult);
 
-            const result = await controller.create(createUserDto);
+            const result = await controller.create(createUserDto, UserRole.ADMIN);
 
             expect(result).toEqual(expectedResult);
-            expect(service.create).toHaveBeenCalledWith(createUserDto);
+            expect(service.create).toHaveBeenCalledWith(createUserDto, UserRole.ADMIN);
         });
     });
 

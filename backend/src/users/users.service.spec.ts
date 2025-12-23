@@ -219,7 +219,7 @@ describe('UsersService', () => {
             (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
             mockPrismaService.user.create.mockResolvedValue(mockCreatedUser);
 
-            const result = await service.create(createUserDto);
+            const result = await service.create(createUserDto, UserRole.ADMIN);
 
             expect(result.success).toBe(true);
             expect(result.message).toBe('User created successfully');
@@ -240,9 +240,101 @@ describe('UsersService', () => {
                 email: createUserDto.email,
             });
 
-            await expect(service.create(createUserDto)).rejects.toThrow(
+            await expect(service.create(createUserDto, UserRole.ADMIN)).rejects.toThrow(
                 ConflictException,
             );
+        });
+
+        it('should allow SUPER_ADMIN to create ADMIN users', async () => {
+            const createUserDto = {
+                email: 'newadmin@example.com',
+                password: 'password123',
+                firstName: 'New',
+                lastName: 'Admin',
+                role: UserRole.ADMIN,
+            };
+
+            const mockCreatedUser = {
+                id: '1',
+                email: createUserDto.email,
+                firstName: createUserDto.firstName,
+                lastName: createUserDto.lastName,
+                role: UserRole.ADMIN,
+                status: UserStatus.ACTIVE,
+                membershipType: MembershipType.FREE,
+                createdAt: new Date(),
+            };
+
+            mockPrismaService.user.findUnique.mockResolvedValue(null);
+            (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
+            mockPrismaService.user.create.mockResolvedValue(mockCreatedUser);
+
+            const result = await service.create(createUserDto, UserRole.SUPER_ADMIN);
+
+            expect(result.success).toBe(true);
+            expect(result.data.user.role).toBe(UserRole.ADMIN);
+        });
+
+        it('should prevent ADMIN from creating SUPER_ADMIN users', async () => {
+            const createUserDto = {
+                email: 'newsuperadmin@example.com',
+                password: 'password123',
+                firstName: 'New',
+                lastName: 'SuperAdmin',
+                role: UserRole.SUPER_ADMIN,
+            };
+
+            mockPrismaService.user.findUnique.mockResolvedValue(null);
+
+            await expect(service.create(createUserDto, UserRole.ADMIN)).rejects.toThrow(
+                ForbiddenException,
+            );
+        });
+
+        it('should prevent ADMIN from creating other ADMIN users', async () => {
+            const createUserDto = {
+                email: 'newadmin@example.com',
+                password: 'password123',
+                firstName: 'New',
+                lastName: 'Admin',
+                role: UserRole.ADMIN,
+            };
+
+            mockPrismaService.user.findUnique.mockResolvedValue(null);
+
+            await expect(service.create(createUserDto, UserRole.ADMIN)).rejects.toThrow(
+                ForbiddenException,
+            );
+        });
+
+        it('should allow ADMIN to create LIBRARIAN users', async () => {
+            const createUserDto = {
+                email: 'newlibrarian@example.com',
+                password: 'password123',
+                firstName: 'New',
+                lastName: 'Librarian',
+                role: UserRole.LIBRARIAN,
+            };
+
+            const mockCreatedUser = {
+                id: '1',
+                email: createUserDto.email,
+                firstName: createUserDto.firstName,
+                lastName: createUserDto.lastName,
+                role: UserRole.LIBRARIAN,
+                status: UserStatus.ACTIVE,
+                membershipType: MembershipType.FREE,
+                createdAt: new Date(),
+            };
+
+            mockPrismaService.user.findUnique.mockResolvedValue(null);
+            (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
+            mockPrismaService.user.create.mockResolvedValue(mockCreatedUser);
+
+            const result = await service.create(createUserDto, UserRole.ADMIN);
+
+            expect(result.success).toBe(true);
+            expect(result.data.user.role).toBe(UserRole.LIBRARIAN);
         });
     });
 

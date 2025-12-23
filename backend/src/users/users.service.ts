@@ -150,11 +150,27 @@ export class UsersService {
         });
     }
 
-    async create(createUserDto: CreateUserDto) {
+    async create(createUserDto: CreateUserDto, creatorRole: UserRole) {
         // Check if email already exists
         const existingUser = await this.findByEmail(createUserDto.email);
         if (existingUser) {
             throw new ConflictException('Email already registered');
+        }
+
+        // Role-based restrictions for creating users
+        const requestedRole = createUserDto.role || UserRole.USER;
+
+        // ADMIN can only create LIBRARIAN and USER roles
+        // SUPER_ADMIN can create any role
+        if (creatorRole === UserRole.ADMIN) {
+            if (
+                requestedRole === UserRole.SUPER_ADMIN ||
+                requestedRole === UserRole.ADMIN
+            ) {
+                throw new ForbiddenException(
+                    'Admins cannot create SUPER_ADMIN or ADMIN users. Only SUPER_ADMIN can create these roles.',
+                );
+            }
         }
 
         // Hash password
@@ -171,7 +187,7 @@ export class UsersService {
                 dateOfBirth: createUserDto.dateOfBirth
                     ? new Date(createUserDto.dateOfBirth)
                     : undefined,
-                role: createUserDto.role || UserRole.USER,
+                role: requestedRole,
                 membershipType: createUserDto.membershipType,
                 status: UserStatus.ACTIVE, // Admin-created users are pre-approved
                 emailVerified: true, // Admin-created users are pre-verified

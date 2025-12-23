@@ -18,12 +18,16 @@ Authorization: Bearer <your_access_token>
 
 ## Endpoints
 
-### 1. Create User (Admin Only)
+### 1. Create User (Admin/Super Admin)
 **POST** `/users`
 
-**Access:** ADMIN only
+**Access:** SUPER_ADMIN, ADMIN
 
-**Description:** Admin creates a new user account. User is created with ACTIVE status and email pre-verified.
+**Description:** Create a new user account. User is created with ACTIVE status and email pre-verified.
+
+**Role-Based Restrictions:**
+- **SUPER_ADMIN** can create: SUPER_ADMIN, ADMIN, LIBRARIAN, USER
+- **ADMIN** can create: LIBRARIAN, USER (cannot create SUPER_ADMIN or ADMIN)
 
 **Request Body:**
 ```json
@@ -61,6 +65,7 @@ Authorization: Bearer <your_access_token>
 
 **Test with cURL:**
 ```bash
+# Create regular user
 curl -X POST http://localhost:3000/users \
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
@@ -69,6 +74,30 @@ curl -X POST http://localhost:3000/users \
     "password": "password123",
     "firstName": "John",
     "lastName": "Doe"
+  }'
+
+# Create librarian (ADMIN or SUPER_ADMIN)
+curl -X POST http://localhost:3000/users \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "librarian@example.com",
+    "password": "password123",
+    "firstName": "Jane",
+    "lastName": "Librarian",
+    "role": "LIBRARIAN"
+  }'
+
+# Create admin (SUPER_ADMIN only)
+curl -X POST http://localhost:3000/users \
+  -H "Authorization: Bearer YOUR_SUPERADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@example.com",
+    "password": "password123",
+    "firstName": "Admin",
+    "lastName": "User",
+    "role": "ADMIN"
   }'
 ```
 
@@ -80,19 +109,25 @@ curl -X POST http://localhost:3000/users \
   "message": "Email already registered"
 }
 
-// 403 Forbidden - Not admin
+// 403 Forbidden - Not admin/super admin
 {
   "statusCode": 403,
   "message": "Forbidden resource"
+}
+
+// 403 Forbidden - Admin trying to create ADMIN or SUPER_ADMIN
+{
+  "success": false,
+  "message": "Admins cannot create SUPER_ADMIN or ADMIN users. Only SUPER_ADMIN can create these roles."
 }
 ```
 
 ---
 
-### 2. List Users (Admin/Librarian)
+### 2. List Users (Admin/Librarian/Super Admin)
 **GET** `/users`
 
-**Access:** ADMIN, LIBRARIAN
+**Access:** SUPER_ADMIN, ADMIN, LIBRARIAN
 
 **Description:** Get paginated list of users with filtering and search.
 
@@ -213,7 +248,7 @@ curl -X GET http://localhost:3000/users/me \
 ### 4. Get User by ID
 **GET** `/users/:id`
 
-**Access:** ADMIN, LIBRARIAN (any user), USER (own profile only)
+**Access:** SUPER_ADMIN, ADMIN, LIBRARIAN (any user), USER (own profile only)
 
 **Description:** Get detailed user information by ID.
 
@@ -312,10 +347,10 @@ curl -X PATCH http://localhost:3000/users/me \
 
 ---
 
-### 6. Update User (Admin or Own Profile)
+### 6. Update User (Admin/Super Admin or Own Profile)
 **PATCH** `/users/:id`
 
-**Access:** ADMIN (any user), USER (own profile only)
+**Access:** SUPER_ADMIN, ADMIN (any user), USER (own profile only)
 
 **Description:** Update user profile. Admin can update any user, regular users can only update themselves.
 
@@ -378,10 +413,10 @@ curl -X PATCH http://localhost:3000/users/uuid-123 \
 
 ---
 
-### 7. Delete User (Admin Only)
+### 7. Delete User (Admin/Super Admin)
 **DELETE** `/users/:id`
 
-**Access:** ADMIN only
+**Access:** SUPER_ADMIN, ADMIN
 
 **Description:** Soft delete user (sets status to INACTIVE). Admin cannot delete their own account.
 
@@ -416,10 +451,10 @@ curl -X DELETE http://localhost:3000/users/uuid-123 \
 
 ---
 
-### 8. Approve User (Admin Only)
+### 8. Approve User (Admin/Super Admin)
 **POST** `/users/:id/approve`
 
-**Access:** ADMIN only
+**Access:** SUPER_ADMIN, ADMIN
 
 **Description:** Approve pending user registration (change status from PENDING_APPROVAL to ACTIVE).
 
@@ -457,10 +492,10 @@ curl -X POST http://localhost:3000/users/uuid-123/approve \
 
 ---
 
-### 9. Suspend User (Admin Only)
+### 9. Suspend User (Admin/Super Admin)
 **POST** `/users/:id/suspend`
 
-**Access:** ADMIN only
+**Access:** SUPER_ADMIN, ADMIN
 
 **Description:** Suspend user account (change status to SUSPENDED).
 
@@ -500,10 +535,10 @@ curl -X POST http://localhost:3000/users/uuid-123/suspend \
 
 ---
 
-### 10. Activate User (Admin Only)
+### 10. Activate User (Admin/Super Admin)
 **POST** `/users/:id/activate`
 
-**Access:** ADMIN only
+**Access:** SUPER_ADMIN, ADMIN
 
 **Description:** Activate suspended or inactive user (change status to ACTIVE).
 

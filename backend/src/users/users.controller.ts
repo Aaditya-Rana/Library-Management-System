@@ -31,8 +31,11 @@ export class UsersController {
     @UseGuards(RolesGuard)
     @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
     @HttpCode(HttpStatus.CREATED)
-    async create(@Body() createUserDto: CreateUserDto) {
-        return this.usersService.create(createUserDto);
+    async create(
+        @Body() createUserDto: CreateUserDto,
+        @GetUser('role') creatorRole: UserRole,
+    ) {
+        return this.usersService.create(createUserDto, creatorRole);
     }
 
     @Get()
