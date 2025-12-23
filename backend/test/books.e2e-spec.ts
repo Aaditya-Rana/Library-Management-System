@@ -4,7 +4,9 @@ import request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { PrismaService } from '../src/common/services/prisma.service';
 import { EmailService } from '../src/common/services/email.service';
+import { CloudinaryService } from '../src/common/services/cloudinary.service';
 import { MockEmailService } from './mocks/mock-email.service';
+import { MockCloudinaryService } from './mocks/mock-cloudinary.service';
 
 describe('Books E2E Tests', () => {
     let app: INestApplication;
@@ -20,6 +22,8 @@ describe('Books E2E Tests', () => {
         })
             .overrideProvider(EmailService)
             .useClass(MockEmailService)
+            .overrideProvider(CloudinaryService)
+            .useClass(MockCloudinaryService)
             .compile();
 
         app = moduleFixture.createNestApplication();
@@ -147,12 +151,12 @@ describe('Books E2E Tests', () => {
                     availableCopies: 5,
                     price: 299.99,
                     bookValue: 500,
-                    securityDeposit: 200,
-                    loanPeriodDays: 14,
-                    finePerDay: 5,
-                    maxRenewals: 2,
                     description: 'A test book',
                 });
+
+            if (response.status !== 201) {
+                console.error('Book creation failed:', response.status, response.body);
+            }
 
             expect(response.status).toBe(201);
             expect(response.body.success).toBe(true);
