@@ -262,7 +262,7 @@ describe('Books E2E Tests', () => {
                 .set('Authorization', `Bearer ${userToken}`);
 
             expect(response.status).toBe(200);
-            response.body.data.forEach((book: any) => {
+            response.body.data.forEach((book: { category: string }) => {
                 expect(book.category).toBe('Fiction');
             });
         });

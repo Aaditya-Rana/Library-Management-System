@@ -29,8 +29,6 @@ export class BooksService {
             search,
             sortBy = 'createdAt',
             sortOrder = 'desc',
-            minPrice,
-            maxPrice,
         } = queryDto;
 
         const skip = (page - 1) * limit;
@@ -47,7 +45,6 @@ export class BooksService {
                 author?: { contains: string; mode: 'insensitive' };
                 isbn?: { contains: string };
             }>;
-            price?: { gte?: number; lte?: number };
         } = {};
 
         if (category) where.category = category;
@@ -73,12 +70,7 @@ export class BooksService {
             ];
         }
 
-        // Price range filter
-        if (minPrice !== undefined || maxPrice !== undefined) {
-            where.price = {};
-            if (minPrice !== undefined) where.price.gte = minPrice;
-            if (maxPrice !== undefined) where.price.lte = maxPrice;
-        }
+
 
         // Execute query
         const [books, total] = await Promise.all([

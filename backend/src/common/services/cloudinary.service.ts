@@ -38,11 +38,11 @@ export class CloudinaryService {
         });
     }
 
-    async deleteImage(publicId: string): Promise<any> {
+    async deleteImage(publicId: string): Promise<{ result: string }> {
         return cloudinary.uploader.destroy(publicId);
     }
 
-    getImageUrl(publicId: string, transformation?: any): string {
+    getImageUrl(publicId: string, transformation?: Record<string, unknown>): string {
         return cloudinary.url(publicId, transformation);
     }
 }

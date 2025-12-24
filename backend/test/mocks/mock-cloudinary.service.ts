@@ -20,7 +20,7 @@ export class MockCloudinaryService {
         return { result: 'ok' };
     }
 
-    getImageUrl(publicId: string, transformation?: any) {
+    getImageUrl(publicId: string, _transformation?: Record<string, unknown>) {
         console.log(`[MOCK] Getting image URL for: ${publicId}`);
         return `https://mock-cloudinary.com/${publicId}`;
     }

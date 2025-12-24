@@ -41,6 +41,7 @@ export class CreateBookDto {
     @IsOptional()
     @Min(1000)
     @Max(new Date().getFullYear() + 1)
+    @Type(() => Number)
     publicationYear?: number;
 
     @IsString()
@@ -71,11 +72,6 @@ export class CreateBookDto {
     @Min(0)
     @Type(() => Number)
     availableCopies?: number;
-
-    @IsNumber()
-    @Min(0)
-    @Type(() => Number)
-    price?: number;
 
     @IsNumber()
     @IsNotEmpty()

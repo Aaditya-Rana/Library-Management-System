@@ -4,7 +4,7 @@ import { BooksService } from './books.service';
 
 describe('BooksController', () => {
     let controller: BooksController;
-    let service: BooksService;
+    let _service: BooksService;
 
     const mockBooksService = {
         findAll: jest.fn(),
@@ -41,7 +41,7 @@ describe('BooksController', () => {
         }).compile();
 
         controller = module.get<BooksController>(BooksController);
-        service = module.get<BooksService>(BooksService);
+        _service = module.get<BooksService>(BooksService);
     });
 
     afterEach(() => {
@@ -52,7 +52,7 @@ describe('BooksController', () => {
         it('should create a new book', async () => {
             mockBooksService.create.mockResolvedValue(mockBook);
 
-            const result = await controller.create(mockBook as any);
+            const result = await controller.create(mockBook as unknown as any);
 
             expect(result.success).toBe(true);
             expect(result.data).toEqual(mockBook);
@@ -63,7 +63,7 @@ describe('BooksController', () => {
             const mockFile = { buffer: Buffer.from('test') } as Express.Multer.File;
             mockBooksService.create.mockResolvedValue(mockBook);
 
-            const result = await controller.create(mockBook as any, mockFile);
+            const _result = await controller.create(mockBook as unknown as any, mockFile);
 
             expect(mockBooksService.create).toHaveBeenCalledWith(mockBook, mockFile);
         });
@@ -142,11 +142,11 @@ describe('BooksController', () => {
             const result = await controller.uploadCover('1', mockFile);
 
             expect(result.success).toBe(true);
-            expect(result.data.url).toBe('https://cloudinary.com/image.jpg');
+            expect(result.data?.url).toBe('https://cloudinary.com/image.jpg');
         });
 
         it('should return error if no file uploaded', async () => {
-            const result = await controller.uploadCover('1', undefined as any);
+            const result = await controller.uploadCover('1', undefined as unknown as Express.Multer.File);
 
             expect(result.success).toBe(false);
             expect(result.message).toBe('No file uploaded');

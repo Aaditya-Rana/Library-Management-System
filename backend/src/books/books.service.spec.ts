@@ -6,8 +6,8 @@ import { NotFoundException, ConflictException, BadRequestException } from '@nest
 
 describe('BooksService', () => {
     let service: BooksService;
-    let prismaService: PrismaService;
-    let cloudinaryService: CloudinaryService;
+    let _prismaService: PrismaService;
+    let _cloudinaryService: CloudinaryService;
 
     const mockPrismaService = {
         book: {
@@ -62,8 +62,8 @@ describe('BooksService', () => {
         }).compile();
 
         service = module.get<BooksService>(BooksService);
-        prismaService = module.get<PrismaService>(PrismaService);
-        cloudinaryService = module.get<CloudinaryService>(CloudinaryService);
+        _prismaService = module.get<PrismaService>(PrismaService);
+        _cloudinaryService = module.get<CloudinaryService>(CloudinaryService);
     });
 
     afterEach(() => {

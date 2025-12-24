@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsInt, Min, IsIn, IsNumber } from 'class-validator';
+import { IsOptional, IsString, IsInt, Min, IsIn } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class QueryBooksDto {
@@ -43,21 +43,10 @@ export class QueryBooksDto {
 
     // Sorting
     @IsOptional()
-    @IsIn(['title', 'author', 'publicationYear', 'price', 'createdAt'])
+    @IsIn(['title', 'author', 'publicationYear', 'bookValue', 'createdAt'])
     sortBy?: string;
 
     @IsOptional()
     @IsIn(['asc', 'desc'])
     sortOrder?: 'asc' | 'desc' = 'asc';
-
-    // Price range
-    @IsOptional()
-    @IsNumber()
-    @Type(() => Number)
-    minPrice?: number;
-
-    @IsOptional()
-    @IsNumber()
-    @Type(() => Number)
-    maxPrice?: number;
 }
