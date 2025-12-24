@@ -38,7 +38,7 @@ export default function ResendVerificationPage() {
                     <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">Check your inbox</h2>
                     <p className="text-gray-600 mb-6">
-                        We've sent a new verification link to <strong>{email}</strong>.
+                        We&apos;ve sent a new verification link to <strong>{email}</strong>.
                     </p>
                     <Link href="/login">
                         <Button className="w-full">Back to Login</Button>
@@ -63,7 +63,7 @@ export default function ResendVerificationPage() {
                     </div>
                     <h2 className="text-center text-2xl font-bold text-gray-900">Resend Verification</h2>
                     <p className="mt-2 text-center text-sm text-gray-600">
-                        Enter your email address and we'll send you a new link to verify your account.
+                        Enter your email address and we&apos;ll send you a new link to verify your account.
                     </p>
                 </div>
 
