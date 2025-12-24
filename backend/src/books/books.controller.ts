@@ -19,6 +19,7 @@ import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { QueryBooksDto } from './dto/query-books.dto';
 import { UpdateInventoryDto } from './dto/update-inventory.dto';
+import { AddBookCopiesDto } from './dto/add-book-copies.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -155,5 +156,14 @@ export class BooksController {
                 isAvailable,
             },
         };
+    }
+
+    @Post(':id/copies')
+    @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
+    async addCopies(
+        @Param('id') id: string,
+        @Body() dto: AddBookCopiesDto,
+    ) {
+        return this.booksService.addBookCopies(id, dto);
     }
 }

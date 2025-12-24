@@ -9,6 +9,7 @@ import { CloudinaryService } from '../common/services/cloudinary.service';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { QueryBooksDto } from './dto/query-books.dto';
+import { AddBookCopiesDto } from './dto/add-book-copies.dto';
 
 @Injectable()
 export class BooksService {
@@ -284,4 +285,96 @@ export class BooksService {
             isActive: book.isActive,
         };
     }
+
+    async addBookCopies(bookId: string, dto: AddBookCopiesDto) {
+        // Verify book exists
+        const book = await this.prisma.book.findUnique({
+            where: { id: bookId },
+            include: {
+                copies: {
+                    orderBy: { copyNumber: 'desc' },
+                    take: 1,
+                },
+            },
+        });
+
+        if (!book) {
+            throw new NotFoundException(`Book with ID ${bookId} not found`);
+        }
+
+        // Get the last copy number
+        const lastCopyNumber = book.copies[0]?.copyNumber || '000';
+        const startNumber = dto.startingCopyNumber
+            ? parseInt(dto.startingCopyNumber, 10)
+            : parseInt(lastCopyNumber, 10) + 1;
+
+        // Generate copies data
+        const copiesToCreate: Array<{
+            bookId: string;
+            copyNumber: string;
+            barcode: string;
+            status: 'AVAILABLE';
+            condition: 'GOOD';
+            shelfLocation?: string;
+            section?: string;
+        }> = [];
+        for (let i = 0; i < dto.numberOfCopies; i++) {
+            const copyNumber = String(startNumber + i).padStart(3, '0');
+            const barcode = `BC-${bookId.substring(0, 8)}-${copyNumber}`;
+
+            copiesToCreate.push({
+                bookId,
+                copyNumber,
+                barcode,
+                status: 'AVAILABLE' as const,
+                condition: 'GOOD' as const,
+                shelfLocation: dto.shelfLocation,
+                section: dto.section,
+            });
+        }
+
+        // Create copies and update book counters in a transaction
+        const result = await this.prisma.$transaction(async (tx) => {
+            // Create all copies
+            const createdCopies = await Promise.all(
+                copiesToCreate.map((copyData) =>
+                    tx.bookCopy.create({
+                        data: copyData,
+                    }),
+                ),
+            );
+
+            // Update book counters
+            const updatedBook = await tx.book.update({
+                where: { id: bookId },
+                data: {
+                    totalCopies: { increment: dto.numberOfCopies },
+                    availableCopies: { increment: dto.numberOfCopies },
+                },
+            });
+
+            return { createdCopies, updatedBook };
+        });
+
+        return {
+            success: true,
+            message: `${dto.numberOfCopies} ${dto.numberOfCopies === 1 ? 'copy' : 'copies'} added successfully`,
+            data: {
+                bookId: book.id,
+                bookTitle: book.title,
+                copiesAdded: dto.numberOfCopies,
+                totalCopies: result.updatedBook.totalCopies,
+                availableCopies: result.updatedBook.availableCopies,
+                copies: result.createdCopies.map((copy) => ({
+                    id: copy.id,
+                    copyNumber: copy.copyNumber,
+                    barcode: copy.barcode,
+                    status: copy.status,
+                    shelfLocation: copy.shelfLocation,
+                    section: copy.section,
+                })),
+            },
+        };
+    }
 }
+
