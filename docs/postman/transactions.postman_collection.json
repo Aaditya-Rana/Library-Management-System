@@ -1,0 +1,608 @@
+{
+    "info": {
+        "_postman_id": "transactions-api-collection",
+        "name": "Library Management - Transactions API",
+        "description": "Complete API collection for Transactions Module - Book borrowing, returns, renewals, and fine management",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+            }
+        ]
+    },
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:3000",
+            "type": "string"
+        },
+        {
+            "key": "accessToken",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "transactionId",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "bookId",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "userId",
+            "value": "",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "1. Issue Book",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 201\", function () {",
+                            "    pm.response.to.have.status(201);",
+                            "});",
+                            "",
+                            "pm.test(\"Response has success flag\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.success).to.be.true;",
+                            "});",
+                            "",
+                            "pm.test(\"Transaction ID is returned\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.data.id).to.exist;",
+                            "    pm.collectionVariables.set(\"transactionId\", jsonData.data.id);",
+                            "});",
+                            "",
+                            "pm.test(\"Transaction status is ISSUED\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.data.status).to.eql(\"ISSUED\");",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"bookId\": \"{{bookId}}\",\n  \"userId\": \"{{userId}}\",\n  \"isHomeDelivery\": false,\n  \"notes\": \"Book issued via Postman\"\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/transactions/issue",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "transactions",
+                        "issue"
+                    ]
+                },
+                "description": "Issue a book to a user. Requires ADMIN or LIBRARIAN role."
+            },
+            "response": []
+        },
+        {
+            "name": "2. Get All Transactions",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "pm.test(\"Response has data array\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.data).to.be.an('array');",
+                            "});",
+                            "",
+                            "pm.test(\"Response has pagination metadata\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.meta).to.exist;",
+                            "    pm.expect(jsonData.meta.page).to.exist;",
+                            "    pm.expect(jsonData.meta.total).to.exist;",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/transactions?page=1&limit=10",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "transactions"
+                    ],
+                    "query": [
+                        {
+                            "key": "page",
+                            "value": "1"
+                        },
+                        {
+                            "key": "limit",
+                            "value": "10"
+                        },
+                        {
+                            "key": "status",
+                            "value": "ISSUED",
+                            "disabled": true
+                        },
+                        {
+                            "key": "overdue",
+                            "value": "true",
+                            "disabled": true
+                        }
+                    ]
+                },
+                "description": "Get paginated list of all transactions with optional filtering."
+            },
+            "response": []
+        },
+        {
+            "name": "3. Get Transaction by ID",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "pm.test(\"Response has transaction data\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.success).to.be.true;",
+                            "    pm.expect(jsonData.data.id).to.exist;",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/transactions/{{transactionId}}",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "transactions",
+                        "{{transactionId}}"
+                    ]
+                },
+                "description": "Get details of a specific transaction."
+            },
+            "response": []
+        },
+        {
+            "name": "4. Get User Transactions",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "pm.test(\"Response has data array\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.data).to.be.an('array');",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/transactions/user/{{userId}}?page=1&limit=10",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "transactions",
+                        "user",
+                        "{{userId}}"
+                    ],
+                    "query": [
+                        {
+                            "key": "page",
+                            "value": "1"
+                        },
+                        {
+                            "key": "limit",
+                            "value": "10"
+                        }
+                    ]
+                },
+                "description": "Get all transactions for a specific user."
+            },
+            "response": []
+        },
+        {
+            "name": "5. Get Book Transaction History",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "pm.test(\"Response has data array\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.data).to.be.an('array');",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/transactions/book/{{bookId}}?page=1&limit=10",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "transactions",
+                        "book",
+                        "{{bookId}}"
+                    ],
+                    "query": [
+                        {
+                            "key": "page",
+                            "value": "1"
+                        },
+                        {
+                            "key": "limit",
+                            "value": "10"
+                        }
+                    ]
+                },
+                "description": "Get transaction history for a specific book."
+            },
+            "response": []
+        },
+        {
+            "name": "6. Renew Transaction",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "pm.test(\"Renewal count increased\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.data.renewalCount).to.be.above(0);",
+                            "});",
+                            "",
+                            "pm.test(\"Status is RENEWED\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.data.status).to.eql(\"RENEWED\");",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/transactions/{{transactionId}}/renew",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "transactions",
+                        "{{transactionId}}",
+                        "renew"
+                    ]
+                },
+                "description": "Renew a transaction to extend the due date."
+            },
+            "response": []
+        },
+        {
+            "name": "7. Calculate Fine",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "pm.test(\"Fine amount is returned\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.fineAmount).to.exist;",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/transactions/{{transactionId}}/calculate-fine",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "transactions",
+                        "{{transactionId}}",
+                        "calculate-fine"
+                    ]
+                },
+                "description": "Calculate fine for a transaction if overdue."
+            },
+            "response": []
+        },
+        {
+            "name": "8. Get Overdue Transactions",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "pm.test(\"Response has count and transactions\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.count).to.exist;",
+                            "    pm.expect(jsonData.transactions).to.be.an('array');",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/transactions/overdue",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "transactions",
+                        "overdue"
+                    ]
+                },
+                "description": "Get all overdue transactions with calculated fines."
+            },
+            "response": []
+        },
+        {
+            "name": "9. Get Transaction Statistics",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "pm.test(\"Statistics are returned\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.totalTransactions).to.exist;",
+                            "    pm.expect(jsonData.activeTransactions).to.exist;",
+                            "    pm.expect(jsonData.overdueTransactions).to.exist;",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/transactions/stats",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "transactions",
+                        "stats"
+                    ],
+                    "query": [
+                        {
+                            "key": "userId",
+                            "value": "{{userId}}",
+                            "disabled": true
+                        }
+                    ]
+                },
+                "description": "Get transaction statistics for the entire system or a specific user."
+            },
+            "response": []
+        },
+        {
+            "name": "10. Pay Fine",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "pm.test(\"Fine payment successful\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.success).to.be.true;",
+                            "    pm.expect(jsonData.message).to.include(\"paid\");",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"amount\": 50,\n  \"paymentMethod\": \"CASH\",\n  \"transactionId\": \"PAYMENT-REF-123\"\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/transactions/{{transactionId}}/pay-fine",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "transactions",
+                        "{{transactionId}}",
+                        "pay-fine"
+                    ]
+                },
+                "description": "Process fine payment for a transaction."
+            },
+            "response": []
+        },
+        {
+            "name": "11. Return Book",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "pm.test(\"Book returned successfully\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.success).to.be.true;",
+                            "    pm.expect(jsonData.data.status).to.eql(\"RETURNED\");",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"damageCharge\": 0,\n  \"notes\": \"Book returned in good condition\"\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/transactions/{{transactionId}}/return",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "transactions",
+                        "{{transactionId}}",
+                        "return"
+                    ]
+                },
+                "description": "Process book return and calculate any fines."
+            },
+            "response": []
+        },
+        {
+            "name": "12. Cancel Transaction",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "pm.test(\"Transaction cancelled\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.success).to.be.true;",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/transactions/{{transactionId}}",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "transactions",
+                        "{{transactionId}}"
+                    ]
+                },
+                "description": "Cancel a transaction (Admin only)."
+            },
+            "response": []
+        }
+    ]
+}
