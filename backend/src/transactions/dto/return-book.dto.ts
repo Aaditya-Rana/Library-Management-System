@@ -2,7 +2,7 @@ import { IsString, IsOptional, IsNumber, Min } from 'class-validator';
 
 export class ReturnBookDto {
     @IsOptional()
-    returnCondition?: any; // JSON object for condition assessment
+    returnCondition?: Record<string, unknown>; // JSON object for condition assessment
 
     @IsNumber()
     @Min(0)

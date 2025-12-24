@@ -11,7 +11,7 @@ import { ReturnBookDto } from './dto/return-book.dto';
 import { RenewTransactionDto } from './dto/renew-transaction.dto';
 import { QueryTransactionsDto } from './dto/query-transactions.dto';
 import { PayFineDto } from './dto/pay-fine.dto';
-import { TransactionStatus } from '@prisma/client';
+import { TransactionStatus, Prisma } from '@prisma/client';
 
 @Injectable()
 export class TransactionsService {
@@ -167,7 +167,7 @@ export class TransactionsService {
                 status: TransactionStatus.RETURNED,
                 fineAmount: totalFine,
                 damageCharge: damageCharge || 0,
-                returnCondition,
+                returnCondition: returnCondition as Prisma.InputJsonValue,
                 notes: notes || transaction.notes,
             },
             include: {
@@ -279,9 +279,9 @@ export class TransactionsService {
         const skip = (page - 1) * limit;
 
         // Build where clause
-        const where: any = {};
+        const where: Prisma.TransactionWhereInput = {};
 
-        if (status) where.status = status;
+        if (status) where.status = status as TransactionStatus;
         if (userId) where.userId = userId;
         if (bookId) where.bookId = bookId;
 

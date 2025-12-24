@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TransactionsController } from './transactions.controller';
 import { TransactionsService } from './transactions.service';
-import { TransactionStatus } from '@prisma/client';
+import { TransactionStatus, PaymentMethod } from '@prisma/client';
 
 describe('TransactionsController', () => {
     let controller: TransactionsController;
@@ -192,7 +192,7 @@ describe('TransactionsController', () => {
         it('should pay fine for a transaction', async () => {
             const payFineDto = {
                 amount: 50,
-                paymentMethod: 'CASH' as any,
+                paymentMethod: PaymentMethod.CASH,
             };
             const paymentResult = {
                 success: true,

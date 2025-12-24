@@ -7,7 +7,7 @@ import {
     BadRequestException,
     ForbiddenException,
 } from '@nestjs/common';
-import { TransactionStatus } from '@prisma/client';
+import { TransactionStatus, PaymentMethod } from '@prisma/client';
 
 describe('TransactionsService', () => {
     let service: TransactionsService;
@@ -377,7 +377,7 @@ describe('TransactionsService', () => {
     describe('payFine', () => {
         const payFineDto = {
             amount: 50,
-            paymentMethod: 'CASH' as any,
+            paymentMethod: PaymentMethod.CASH,
         };
 
         it('should pay fine successfully', async () => {

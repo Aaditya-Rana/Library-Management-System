@@ -294,7 +294,7 @@ describe('Transactions (e2e)', () => {
                 .set('Authorization', `Bearer ${librarianToken}`);
 
             expect(response.status).toBe(200);
-            response.body.data.forEach((trans: any) => {
+            response.body.data.forEach((trans: Record<string, unknown>) => {
                 expect(trans.status).toBe('ISSUED');
             });
         });
