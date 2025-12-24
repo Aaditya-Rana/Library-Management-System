@@ -10,6 +10,8 @@ import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { QueryBooksDto } from './dto/query-books.dto';
 import { AddBookCopiesDto } from './dto/add-book-copies.dto';
+import { UpdateBookCopyDto } from './dto/update-book-copy.dto';
+import { UpdateCopyStatusDto } from './dto/update-copy-status.dto';
 
 @Injectable()
 export class BooksService {
@@ -374,6 +376,265 @@ export class BooksService {
                     section: copy.section,
                 })),
             },
+        };
+    }
+
+    async getBookCopies(bookId: string) {
+        // Verify book exists
+        const book = await this.prisma.book.findUnique({
+            where: { id: bookId },
+        });
+
+        if (!book) {
+            throw new NotFoundException(`Book with ID ${bookId} not found`);
+        }
+
+        const copies = await this.prisma.bookCopy.findMany({
+            where: { bookId },
+            orderBy: { copyNumber: 'asc' },
+            include: {
+                transactions: {
+                    where: {
+                        status: { in: ['ISSUED', 'RENEWED'] },
+                    },
+                    select: {
+                        id: true,
+                        dueDate: true,
+                        user: {
+                            select: {
+                                firstName: true,
+                                lastName: true,
+                                email: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
+        return {
+            success: true,
+            data: {
+                bookId: book.id,
+                bookTitle: book.title,
+                totalCopies: copies.length,
+                copies: copies.map((copy) => ({
+                    id: copy.id,
+                    copyNumber: copy.copyNumber,
+                    barcode: copy.barcode,
+                    status: copy.status,
+                    condition: copy.condition,
+                    shelfLocation: copy.shelfLocation,
+                    section: copy.section,
+                    acquiredDate: copy.acquiredDate,
+                    lastIssuedDate: copy.lastIssuedDate,
+                    conditionNotes: copy.conditionNotes,
+                    currentTransaction: copy.transactions[0] || null,
+                })),
+            },
+        };
+    }
+
+    async getBookCopyById(bookId: string, copyId: string) {
+        const copy = await this.prisma.bookCopy.findFirst({
+            where: {
+                id: copyId,
+                bookId,
+            },
+            include: {
+                book: {
+                    select: {
+                        id: true,
+                        title: true,
+                        author: true,
+                        isbn: true,
+                    },
+                },
+                transactions: {
+                    orderBy: { createdAt: 'desc' },
+                    take: 10,
+                    select: {
+                        id: true,
+                        issueDate: true,
+                        dueDate: true,
+                        returnDate: true,
+                        status: true,
+                        user: {
+                            select: {
+                                firstName: true,
+                                lastName: true,
+                                email: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
+        if (!copy) {
+            throw new NotFoundException(`Book copy with ID ${copyId} not found`);
+        }
+
+        return {
+            success: true,
+            data: {
+                ...copy,
+                transactionHistory: copy.transactions,
+            },
+        };
+    }
+
+    async updateBookCopy(bookId: string, copyId: string, dto: UpdateBookCopyDto) {
+        // Verify copy exists and belongs to book
+        const copy = await this.prisma.bookCopy.findFirst({
+            where: {
+                id: copyId,
+                bookId,
+            },
+        });
+
+        if (!copy) {
+            throw new NotFoundException(`Book copy with ID ${copyId} not found`);
+        }
+
+        const updatedCopy = await this.prisma.bookCopy.update({
+            where: { id: copyId },
+            data: {
+                shelfLocation: dto.shelfLocation,
+                section: dto.section,
+                condition: dto.condition,
+                conditionNotes: dto.conditionNotes,
+                conditionPhotos: dto.conditionPhotos ? JSON.parse(JSON.stringify(dto.conditionPhotos)) : undefined,
+            },
+        });
+
+        return {
+            success: true,
+            message: 'Book copy updated successfully',
+            data: updatedCopy,
+        };
+    }
+
+    async updateCopyStatus(bookId: string, copyId: string, dto: UpdateCopyStatusDto) {
+        // Verify copy exists and belongs to book
+        const copy = await this.prisma.bookCopy.findFirst({
+            where: {
+                id: copyId,
+                bookId,
+            },
+        });
+
+        if (!copy) {
+            throw new NotFoundException(`Book copy with ID ${copyId} not found`);
+        }
+
+        // Check if copy is currently issued
+        if (dto.status !== 'AVAILABLE') {
+            const activeTransaction = await this.prisma.transaction.findFirst({
+                where: {
+                    bookCopyId: copyId,
+                    status: { in: ['ISSUED', 'RENEWED'] },
+                },
+            });
+
+            if (activeTransaction) {
+                throw new BadRequestException('Cannot change status of currently issued copy');
+            }
+        }
+
+        // Determine if we need to update availableCopies counter
+        const oldStatus = copy.status;
+        const newStatus = dto.status;
+        let availableCopiesChange = 0;
+
+        // If changing from AVAILABLE to non-AVAILABLE, decrement
+        if (oldStatus === 'AVAILABLE' && newStatus !== 'AVAILABLE') {
+            availableCopiesChange = -1;
+        }
+        // If changing from non-AVAILABLE to AVAILABLE, increment
+        else if (oldStatus !== 'AVAILABLE' && newStatus === 'AVAILABLE') {
+            availableCopiesChange = 1;
+        }
+
+        // Update in transaction
+        const result = await this.prisma.$transaction(async (tx) => {
+            // Update copy status
+            const updatedCopy = await tx.bookCopy.update({
+                where: { id: copyId },
+                data: {
+                    status: dto.status,
+                    conditionNotes: dto.notes
+                        ? `${copy.conditionNotes || ''}\n[${new Date().toISOString()}] Status changed to ${dto.status}. Reason: ${dto.reason || 'N/A'}. Notes: ${dto.notes}`
+                        : copy.conditionNotes,
+                },
+            });
+
+            // Update book's availableCopies if needed
+            if (availableCopiesChange !== 0) {
+                await tx.book.update({
+                    where: { id: bookId },
+                    data: {
+                        availableCopies: { increment: availableCopiesChange },
+                    },
+                });
+            }
+
+            return updatedCopy;
+        });
+
+        return {
+            success: true,
+            message: `Copy status updated to ${dto.status}`,
+            data: result,
+        };
+    }
+
+    async deleteBookCopy(bookId: string, copyId: string) {
+        // Verify copy exists and belongs to book
+        const copy = await this.prisma.bookCopy.findFirst({
+            where: {
+                id: copyId,
+                bookId,
+            },
+        });
+
+        if (!copy) {
+            throw new NotFoundException(`Book copy with ID ${copyId} not found`);
+        }
+
+        // Check if copy is currently issued
+        const activeTransaction = await this.prisma.transaction.findFirst({
+            where: {
+                bookCopyId: copyId,
+                status: { in: ['ISSUED', 'RENEWED'] },
+            },
+        });
+
+        if (activeTransaction) {
+            throw new BadRequestException('Cannot delete a copy that is currently issued');
+        }
+
+        // Delete in transaction and update counters
+        await this.prisma.$transaction(async (tx) => {
+            // Delete the copy
+            await tx.bookCopy.delete({
+                where: { id: copyId },
+            });
+
+            // Update book counters
+            const decrementAvailable = copy.status === 'AVAILABLE' ? 1 : 0;
+            await tx.book.update({
+                where: { id: bookId },
+                data: {
+                    totalCopies: { decrement: 1 },
+                    availableCopies: { decrement: decrementAvailable },
+                },
+            });
+        });
+
+        return {
+            success: true,
+            message: 'Book copy deleted successfully',
         };
     }
 }
