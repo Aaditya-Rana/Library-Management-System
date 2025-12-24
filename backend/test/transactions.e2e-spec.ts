@@ -42,11 +42,23 @@ describe('Transactions (e2e)', () => {
 
         prisma = moduleFixture.get<PrismaService>(PrismaService);
 
-        // Clean up database
-        await prisma.transaction.deleteMany();
-        await prisma.bookCopy.deleteMany();
-        await prisma.book.deleteMany();
-        await prisma.user.deleteMany();
+        // Clean up database - ONLY this test's data
+        await prisma.transaction.deleteMany({
+            where: {
+                user: { email: { contains: '@transtest.com' } },
+            },
+        });
+        await prisma.bookCopy.deleteMany({
+            where: {
+                book: { isbn: { startsWith: '97812345' } },
+            },
+        });
+        await prisma.book.deleteMany({
+            where: { isbn: { startsWith: '97812345' } },
+        });
+        await prisma.user.deleteMany({
+            where: { email: { contains: '@transtest.com' } },
+        });
 
         // Create test users
         const adminEmail = `admin${Date.now()}@transtest.com`;
@@ -151,10 +163,23 @@ describe('Transactions (e2e)', () => {
     });
 
     afterAll(async () => {
-        await prisma.transaction.deleteMany();
-        await prisma.bookCopy.deleteMany();
-        await prisma.book.deleteMany();
-        await prisma.user.deleteMany();
+        // Clean up only this test's data
+        await prisma.transaction.deleteMany({
+            where: {
+                user: { email: { contains: '@transtest.com' } },
+            },
+        });
+        await prisma.bookCopy.deleteMany({
+            where: {
+                book: { isbn: { startsWith: '97812345' } },
+            },
+        });
+        await prisma.book.deleteMany({
+            where: { isbn: { startsWith: '97812345' } },
+        });
+        await prisma.user.deleteMany({
+            where: { email: { contains: '@transtest.com' } },
+        });
         await app.close();
     });
 
