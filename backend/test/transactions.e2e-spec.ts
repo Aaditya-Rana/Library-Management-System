@@ -43,9 +43,13 @@ describe('Transactions (e2e)', () => {
         prisma = moduleFixture.get<PrismaService>(PrismaService);
 
         // Clean up database - ONLY this test's data
+        // Delete in correct order: transactions first, then book copies
         await prisma.transaction.deleteMany({
             where: {
-                user: { email: { contains: '@transtest.com' } },
+                OR: [
+                    { user: { email: { contains: '@transtest.com' } } },
+                    { bookCopy: { book: { isbn: { startsWith: '97812345' } } } },
+                ],
             },
         });
         await prisma.bookCopy.deleteMany({
@@ -123,17 +127,17 @@ describe('Transactions (e2e)', () => {
         const adminLogin = await request(app.getHttpServer())
             .post('/auth/login')
             .send({ email: adminEmail, password: 'Admin@123' });
-        adminToken = adminLogin.body.accessToken;
+        adminToken = adminLogin.body.data.accessToken;
 
         const librarianLogin = await request(app.getHttpServer())
             .post('/auth/login')
             .send({ email: librarianEmail, password: 'Librarian@123' });
-        librarianToken = librarianLogin.body.accessToken;
+        librarianToken = librarianLogin.body.data.accessToken;
 
         const userLogin = await request(app.getHttpServer())
             .post('/auth/login')
             .send({ email: userEmail, password: 'User@123' });
-        userToken = userLogin.body.accessToken;
+        userToken = userLogin.body.data.accessToken;
 
         // Create a test book
         const book = await prisma.book.create({
@@ -164,9 +168,13 @@ describe('Transactions (e2e)', () => {
 
     afterAll(async () => {
         // Clean up only this test's data
+        // Delete in correct order: transactions first, then book copies
         await prisma.transaction.deleteMany({
             where: {
-                user: { email: { contains: '@transtest.com' } },
+                OR: [
+                    { user: { email: { contains: '@transtest.com' } } },
+                    { bookCopy: { book: { isbn: { startsWith: '97812345' } } } },
+                ],
             },
         });
         await prisma.bookCopy.deleteMany({
