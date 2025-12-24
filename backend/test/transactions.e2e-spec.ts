@@ -127,17 +127,17 @@ describe('Transactions (e2e)', () => {
         const adminLogin = await request(app.getHttpServer())
             .post('/auth/login')
             .send({ email: adminEmail, password: 'Admin@123' });
-        adminToken = adminLogin.body.data.accessToken;
+        adminToken = adminLogin.body.data.tokens.accessToken;
 
         const librarianLogin = await request(app.getHttpServer())
             .post('/auth/login')
             .send({ email: librarianEmail, password: 'Librarian@123' });
-        librarianToken = librarianLogin.body.data.accessToken;
+        librarianToken = librarianLogin.body.data.tokens.accessToken;
 
         const userLogin = await request(app.getHttpServer())
             .post('/auth/login')
             .send({ email: userEmail, password: 'User@123' });
-        userToken = userLogin.body.data.accessToken;
+        userToken = userLogin.body.data.tokens.accessToken;
 
         // Create a test book
         const book = await prisma.book.create({
