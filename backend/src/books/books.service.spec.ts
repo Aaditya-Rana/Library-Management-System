@@ -3,6 +3,7 @@ import { BooksService } from './books.service';
 import { PrismaService } from '../common/services/prisma.service';
 import { CloudinaryService } from '../common/services/cloudinary.service';
 import { NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { BookCondition, BookStatus } from '@prisma/client';
 
 describe('BooksService', () => {
     let service: BooksService;
@@ -415,18 +416,16 @@ describe('BooksService', () => {
     describe('getBookCopies', () => {
         it('should return all copies for a book', async () => {
             mockPrismaService.book.findUnique.mockResolvedValue(mockBook);
-            mockPrismaService.bookCopy = {
-                findMany: jest.fn().mockResolvedValue([
-                    {
-                        id: 'copy-1',
-                        copyNumber: '001',
-                        barcode: 'BC-001',
-                        status: 'AVAILABLE',
-                        condition: 'GOOD',
-                        transactions: [],
-                    },
-                ]),
-            };
+            mockPrismaService.bookCopy.findMany.mockResolvedValue([
+                {
+                    id: 'copy-1',
+                    copyNumber: '001',
+                    barcode: 'BC-001',
+                    status: 'AVAILABLE',
+                    condition: 'GOOD',
+                    transactions: [],
+                },
+            ]);
 
             const result = await service.getBookCopies('1');
 
@@ -443,14 +442,12 @@ describe('BooksService', () => {
 
     describe('getBookCopyById', () => {
         it('should return copy with transaction history', async () => {
-            mockPrismaService.bookCopy = {
-                findFirst: jest.fn().mockResolvedValue({
-                    id: 'copy-1',
-                    copyNumber: '001',
-                    book: mockBook,
-                    transactions: [],
-                }),
-            };
+            mockPrismaService.bookCopy.findFirst.mockResolvedValue({
+                id: 'copy-1',
+                copyNumber: '001',
+                book: mockBook,
+                transactions: [],
+            });
 
             const result = await service.getBookCopyById('1', 'copy-1');
 
@@ -459,9 +456,7 @@ describe('BooksService', () => {
         });
 
         it('should throw NotFoundException if copy not found', async () => {
-            mockPrismaService.bookCopy = {
-                findFirst: jest.fn().mockResolvedValue(null),
-            };
+            mockPrismaService.bookCopy.findFirst.mockResolvedValue(null);
 
             await expect(service.getBookCopyById('1', 'copy-1')).rejects.toThrow(
                 NotFoundException,
@@ -471,16 +466,14 @@ describe('BooksService', () => {
 
     describe('updateBookCopy', () => {
         it('should update copy details', async () => {
-            const dto = { shelfLocation: 'B-15', condition: 'FAIR' as any };
+            const dto = { shelfLocation: 'B-15', condition: BookCondition.FAIR };
 
-            mockPrismaService.bookCopy = {
-                findFirst: jest.fn().mockResolvedValue({ id: 'copy-1' }),
-                update: jest.fn().mockResolvedValue({
-                    id: 'copy-1',
-                    shelfLocation: 'B-15',
-                    condition: 'FAIR',
-                }),
-            };
+            mockPrismaService.bookCopy.findFirst.mockResolvedValue({ id: 'copy-1' });
+            mockPrismaService.bookCopy.update.mockResolvedValue({
+                id: 'copy-1',
+                shelfLocation: 'B-15',
+                condition: 'FAIR',
+            });
 
             const result = await service.updateBookCopy('1', 'copy-1', dto);
 
@@ -489,9 +482,7 @@ describe('BooksService', () => {
         });
 
         it('should throw NotFoundException if copy not found', async () => {
-            mockPrismaService.bookCopy = {
-                findFirst: jest.fn().mockResolvedValue(null),
-            };
+            mockPrismaService.bookCopy.findFirst.mockResolvedValue(null);
 
             await expect(
                 service.updateBookCopy('1', 'copy-1', {}),
@@ -501,18 +492,14 @@ describe('BooksService', () => {
 
     describe('updateCopyStatus', () => {
         it('should update status and decrement availableCopies', async () => {
-            const dto = { status: 'DAMAGED' as any, reason: 'Water damage' };
+            const dto = { status: BookStatus.DAMAGED, reason: 'Water damage' };
 
-            mockPrismaService.bookCopy = {
-                findFirst: jest.fn().mockResolvedValue({
-                    id: 'copy-1',
-                    status: 'AVAILABLE',
-                }),
-            };
+            mockPrismaService.bookCopy.findFirst.mockResolvedValue({
+                id: 'copy-1',
+                status: 'AVAILABLE',
+            });
 
-            mockPrismaService.transaction = {
-                findFirst: jest.fn().mockResolvedValue(null),
-            };
+            mockPrismaService.transaction.findFirst.mockResolvedValue(null);
 
             mockPrismaService.$transaction.mockImplementation(async (callback) => {
                 return callback({
@@ -535,32 +522,24 @@ describe('BooksService', () => {
         });
 
         it('should throw BadRequestException if copy is currently issued', async () => {
-            mockPrismaService.bookCopy = {
-                findFirst: jest.fn().mockResolvedValue({ id: 'copy-1', status: 'AVAILABLE' }),
-            };
+            mockPrismaService.bookCopy.findFirst.mockResolvedValue({ id: 'copy-1', status: 'AVAILABLE' });
 
-            mockPrismaService.transaction = {
-                findFirst: jest.fn().mockResolvedValue({ id: 'trans-1' }),
-            };
+            mockPrismaService.transaction.findFirst.mockResolvedValue({ id: 'trans-1' });
 
             await expect(
-                service.updateCopyStatus('1', 'copy-1', { status: 'DAMAGED' as any }),
+                service.updateCopyStatus('1', 'copy-1', { status: BookStatus.DAMAGED }),
             ).rejects.toThrow(BadRequestException);
         });
     });
 
     describe('deleteBookCopy', () => {
         it('should delete copy and update counters', async () => {
-            mockPrismaService.bookCopy = {
-                findFirst: jest.fn().mockResolvedValue({
-                    id: 'copy-1',
-                    status: 'AVAILABLE',
-                }),
-            };
+            mockPrismaService.bookCopy.findFirst.mockResolvedValue({
+                id: 'copy-1',
+                status: 'AVAILABLE',
+            });
 
-            mockPrismaService.transaction = {
-                findFirst: jest.fn().mockResolvedValue(null),
-            };
+            mockPrismaService.transaction.findFirst.mockResolvedValue(null);
 
             mockPrismaService.$transaction.mockImplementation(async (callback) => {
                 return callback({
@@ -580,13 +559,9 @@ describe('BooksService', () => {
         });
 
         it('should throw BadRequestException if copy is currently issued', async () => {
-            mockPrismaService.bookCopy = {
-                findFirst: jest.fn().mockResolvedValue({ id: 'copy-1' }),
-            };
+            mockPrismaService.bookCopy.findFirst.mockResolvedValue({ id: 'copy-1' });
 
-            mockPrismaService.transaction = {
-                findFirst: jest.fn().mockResolvedValue({ id: 'trans-1' }),
-            };
+            mockPrismaService.transaction.findFirst.mockResolvedValue({ id: 'trans-1' });
 
             await expect(service.deleteBookCopy('1', 'copy-1')).rejects.toThrow(
                 BadRequestException,
