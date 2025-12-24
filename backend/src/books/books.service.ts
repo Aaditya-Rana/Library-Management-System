@@ -138,22 +138,13 @@ export class BooksService {
             coverImageUrl = uploadResult.secure_url;
         }
 
-        // Set defaults
-        const totalCopies = createBookDto.totalCopies || 1;
-        const availableCopies = createBookDto.availableCopies !== undefined
-            ? createBookDto.availableCopies
-            : totalCopies;
-
-        // Validate available copies
-        if (availableCopies > totalCopies) {
-            throw new BadRequestException('Available copies cannot exceed total copies');
-        }
-
+        // NOTE: totalCopies and availableCopies are initialized to 0
+        // Use addBookCopies() after creating the book to add physical copies
         const book = await this.prisma.book.create({
             data: {
                 ...createBookDto,
-                totalCopies,
-                availableCopies,
+                totalCopies: 0,  // Will be incremented via addBookCopies()
+                availableCopies: 0,  // Will be incremented via addBookCopies()
                 coverImageUrl,
                 language: createBookDto.language || 'English',
                 isActive: true,
@@ -185,20 +176,21 @@ export class BooksService {
             coverImageUrl = uploadResult.secure_url;
         }
 
-        // Validate available copies if being updated
-        const totalCopies = updateBookDto.totalCopies || existingBook.totalCopies;
-        const availableCopies = updateBookDto.availableCopies !== undefined
-            ? updateBookDto.availableCopies
-            : existingBook.availableCopies;
+        // NOTE: totalCopies and availableCopies cannot be updated here
+        // Use addBookCopies() or deleteBookCopy() to manage inventory
+        const { totalCopies, availableCopies, ...updateData } = updateBookDto;
 
-        if (availableCopies > totalCopies) {
-            throw new BadRequestException('Available copies cannot exceed total copies');
+        if (totalCopies !== undefined || availableCopies !== undefined) {
+            throw new BadRequestException(
+                'Cannot update totalCopies or availableCopies directly. ' +
+                'Use addBookCopies() or deleteBookCopy() to manage inventory.'
+            );
         }
 
         const book = await this.prisma.book.update({
             where: { id },
             data: {
-                ...updateBookDto,
+                ...updateData,
                 ...(coverImageUrl && { coverImageUrl }),
             },
         });
@@ -239,29 +231,20 @@ export class BooksService {
         return this.cloudinary.uploadImage(file, 'books');
     }
 
+    /**
+     * @deprecated Use addBookCopies() or deleteBookCopy() instead
+     * This method is deprecated because it modifies Book counters without syncing BookCopy records.
+     * This creates a mismatch between denormalized counters and actual inventory.
+     * 
+     * For proper inventory management:
+     * - To add copies: use addBookCopies(bookId, { numberOfCopies: n })
+     * - To remove copies: use deleteBookCopy(bookId, copyId)
+     */
     async updateInventory(id: string, quantity: number) {
-        // Check if book exists
-        const book = await this.findOne(id);
-
-        // Calculate new available copies
-        const difference = quantity - book.totalCopies;
-        const newAvailableCopies = book.availableCopies + difference;
-
-        if (newAvailableCopies < 0) {
-            throw new BadRequestException(
-                'Cannot reduce inventory below currently borrowed copies',
-            );
-        }
-
-        const updatedBook = await this.prisma.book.update({
-            where: { id },
-            data: {
-                totalCopies: quantity,
-                availableCopies: newAvailableCopies,
-            },
-        });
-
-        return updatedBook;
+        throw new BadRequestException(
+            'updateInventory is deprecated. Use addBookCopies() to add copies or deleteBookCopy() to remove copies. ' +
+            'This ensures proper sync between Book counters and BookCopy records.'
+        );
     }
 
     async checkAvailability(id: string): Promise<boolean> {

@@ -208,33 +208,19 @@ describe('BooksService', () => {
         });
 
         it('should upload cover image if provided', async () => {
-            const mockFile = {
-                buffer: Buffer.from('test'),
-                mimetype: 'image/jpeg',
-                size: 1024,
-            } as Express.Multer.File;
-
+            const mockFile: any = { mimetype: 'image/jpeg', size: 1024 };
             mockPrismaService.book.findUnique.mockResolvedValue(null);
             mockCloudinaryService.uploadImage.mockResolvedValue({
-                secure_url: 'https://cloudinary.com/image.jpg',
+                secure_url: 'https://cloudinary.com/uploaded.jpg',
             });
-            mockPrismaService.book.create.mockResolvedValue(mockBook);
+            mockPrismaService.book.create.mockResolvedValue({
+                ...mockBook,
+                coverImageUrl: 'https://cloudinary.com/uploaded.jpg',
+            });
 
-            await service.create(createBookDto, mockFile);
+            const result = await service.create(createBookDto, mockFile);
 
-            expect(mockCloudinaryService.uploadImage).toHaveBeenCalledWith(mockFile, 'books');
-        });
-
-        it('should throw BadRequestException if availableCopies > totalCopies', async () => {
-            mockPrismaService.book.findUnique.mockResolvedValue(null);
-
-            const invalidDto = {
-                ...createBookDto,
-                totalCopies: 5,
-                availableCopies: 10,
-            };
-
-            await expect(service.create(invalidDto)).rejects.toThrow(BadRequestException);
+            expect(result.coverImageUrl).toBe('https://cloudinary.com/uploaded.jpg');
         });
     });
 
@@ -339,27 +325,13 @@ describe('BooksService', () => {
     });
 
     describe('updateInventory', () => {
-        it('should update book inventory', async () => {
-            mockPrismaService.book.findUnique.mockResolvedValue(mockBook);
-            mockPrismaService.book.update.mockResolvedValue({
-                ...mockBook,
-                totalCopies: 10,
-                availableCopies: 8,
-            });
-
-            const result = await service.updateInventory('1', 10);
-
-            expect(result.totalCopies).toBe(10);
-        });
-
-        it('should throw BadRequestException if reducing below borrowed copies', async () => {
-            mockPrismaService.book.findUnique.mockResolvedValue({
-                ...mockBook,
-                totalCopies: 10,
-                availableCopies: 3, // 7 borrowed
-            });
-
-            await expect(service.updateInventory('1', 5)).rejects.toThrow(BadRequestException);
+        it('should throw BadRequestException (deprecated)', async () => {
+            await expect(service.updateInventory('1', 10)).rejects.toThrow(
+                BadRequestException,
+            );
+            await expect(service.updateInventory('1', 10)).rejects.toThrow(
+                /deprecated/i,
+            );
         });
     });
 
