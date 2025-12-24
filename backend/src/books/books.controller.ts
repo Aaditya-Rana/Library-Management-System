@@ -19,6 +19,9 @@ import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { QueryBooksDto } from './dto/query-books.dto';
 import { UpdateInventoryDto } from './dto/update-inventory.dto';
+import { AddBookCopiesDto } from './dto/add-book-copies.dto';
+import { UpdateBookCopyDto } from './dto/update-book-copy.dto';
+import { UpdateCopyStatusDto } from './dto/update-copy-status.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -155,5 +158,59 @@ export class BooksController {
                 isAvailable,
             },
         };
+    }
+
+    @Post(':id/copies')
+    @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
+    async addCopies(
+        @Param('id') id: string,
+        @Body() dto: AddBookCopiesDto,
+    ) {
+        return this.booksService.addBookCopies(id, dto);
+    }
+
+    @Get(':id/copies')
+    @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
+    async getBookCopies(@Param('id') id: string) {
+        return this.booksService.getBookCopies(id);
+    }
+
+    @Get(':bookId/copies/:copyId')
+    @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
+    async getBookCopyById(
+        @Param('bookId') bookId: string,
+        @Param('copyId') copyId: string,
+    ) {
+        return this.booksService.getBookCopyById(bookId, copyId);
+    }
+
+    @Patch(':bookId/copies/:copyId')
+    @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
+    async updateBookCopy(
+        @Param('bookId') bookId: string,
+        @Param('copyId') copyId: string,
+        @Body() dto: UpdateBookCopyDto,
+    ) {
+        return this.booksService.updateBookCopy(bookId, copyId, dto);
+    }
+
+    @Patch(':bookId/copies/:copyId/status')
+    @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
+    async updateCopyStatus(
+        @Param('bookId') bookId: string,
+        @Param('copyId') copyId: string,
+        @Body() dto: UpdateCopyStatusDto,
+    ) {
+        return this.booksService.updateCopyStatus(bookId, copyId, dto);
+    }
+
+    @Delete(':bookId/copies/:copyId')
+    @Roles(UserRole.ADMIN)
+    @HttpCode(HttpStatus.OK)
+    async deleteBookCopy(
+        @Param('bookId') bookId: string,
+        @Param('copyId') copyId: string,
+    ) {
+        return this.booksService.deleteBookCopy(bookId, copyId);
     }
 }

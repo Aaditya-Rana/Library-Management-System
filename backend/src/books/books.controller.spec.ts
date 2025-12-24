@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BooksController } from './books.controller';
 import { BooksService } from './books.service';
+import { CreateBookDto } from './dto/create-book.dto';
 
 describe('BooksController', () => {
     let controller: BooksController;
@@ -52,7 +53,7 @@ describe('BooksController', () => {
         it('should create a new book', async () => {
             mockBooksService.create.mockResolvedValue(mockBook);
 
-            const result = await controller.create(mockBook as unknown as any);
+            const result = await controller.create(mockBook as unknown as CreateBookDto);
 
             expect(result.success).toBe(true);
             expect(result.data).toEqual(mockBook);
@@ -63,7 +64,7 @@ describe('BooksController', () => {
             const mockFile = { buffer: Buffer.from('test') } as Express.Multer.File;
             mockBooksService.create.mockResolvedValue(mockBook);
 
-            const _result = await controller.create(mockBook as unknown as any, mockFile);
+            const _result = await controller.create(mockBook as unknown as CreateBookDto, mockFile);
 
             expect(mockBooksService.create).toHaveBeenCalledWith(mockBook, mockFile);
         });

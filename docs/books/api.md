@@ -31,13 +31,13 @@ Create a new book in the system.
   "category": "Fiction",
   "genre": "Classic Literature",
   "language": "English",
-  "totalCopies": 5,
-  "availableCopies": 5,
   "price": 299.99,
   "bookValue": 500.00,
   "description": "A novel set in the Jazz Age..."
 }
 ```
+
+> **Note:** `totalCopies` and `availableCopies` are automatically initialized to 0. Use the `POST /books/:id/copies` endpoint to add physical book copies after creation.
 
 **Optional File Upload:**
 - Field name: `coverImage`
@@ -50,14 +50,24 @@ Create a new book in the system.
   "success": true,
   "message": "Book created successfully",
   "data": {
-    "id": "uuid",
+    "id": "clh1a2b3c4d5e6f7g8h9i0j1",
     "isbn": "9781234567890",
     "title": "The Great Gatsby",
     "author": "F. Scott Fitzgerald",
-    "coverImageUrl": "https://cloudinary.com/...",
+    "publisher": "Scribner",
+    "publicationYear": 1925,
+    "category": "Fiction",
+    "genre": "Classic Literature",
+    "language": "English",
+    "totalCopies": 0,
+    "availableCopies": 0,
+    "price": 299.99,
+    "bookValue": 500.00,
+    "description": "A novel set in the Jazz Age...",
+    "coverImageUrl": "https://res.cloudinary.com/...",
     "isActive": true,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    ...
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T10:30:00Z"
   }
 }
 ```
@@ -589,3 +599,219 @@ GET /books?category=Fiction&availability=available&sortBy=price&sortOrder=asc&pa
 - Search is case-insensitive
 - Pagination starts at page 1
 - Default sort order is by creation date (newest first)
+
+## BookCopy Management
+
+### 11. Add Book Copies
+
+Add physical copies for a book.
+
+**Endpoint:** `POST /books/:id/copies`
+
+**Authorization:** ADMIN, LIBRARIAN
+
+**Request Body:**
+```json
+{
+  "numberOfCopies": 5,
+  "shelfLocation": "A-12",
+  "section": "Fiction"
+}
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "message": "5 copies added successfully",
+  "data": {
+    "bookId": "uuid",
+    "bookTitle": "The Great Gatsby",
+    "copiesAdded": 5,
+    "totalCopies": 5,
+    "availableCopies": 5,
+    "copies": [
+      {
+        "id": "copy-uuid",
+        "copyNumber": "001",
+        "barcode": "BC-bookid-001",
+        "status": "AVAILABLE",
+        "shelfLocation": "A-12"
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 12. List Book Copies
+
+Get all physical copies of a book.
+
+**Endpoint:** `GET /books/:id/copies`
+
+**Authorization:** ADMIN, LIBRARIAN
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "bookId": "uuid",
+    "bookTitle": "The Great Gatsby",
+    "totalCopies": 5,
+    "copies": [
+      {
+        "id": "copy-uuid",
+        "copyNumber": "001",
+        "barcode": "BC-bookid-001",
+        "status": "AVAILABLE",
+        "condition": "GOOD",
+        "shelfLocation": "A-12",
+        "section": "Fiction",
+        "currentTransaction": null
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 13. Get Copy Details
+
+Get detailed information about a specific copy.
+
+**Endpoint:** `GET /books/:bookId/copies/:copyId`
+
+**Authorization:** ADMIN, LIBRARIAN
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "copy-uuid",
+    "copyNumber": "001",
+    "barcode": "BC-bookid-001",
+    "status": "AVAILABLE",
+    "condition": "GOOD",
+    "shelfLocation": "A-12",
+    "transactionHistory": [
+      {
+        "id": "trans-uuid",
+        "issueDate": "2024-01-01",
+        "returnDate": "2024-01-15",
+        "status": "RETURNED",
+        "user": {
+          "firstName": "John",
+          "lastName": "Doe"
+        }
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 14. Update Copy
+
+Update copy details (location, condition, notes).
+
+**Endpoint:** `PATCH /books/:bookId/copies/:copyId`
+
+**Authorization:** ADMIN, LIBRARIAN
+
+**Request Body:**
+```json
+{
+  "shelfLocation": "B-15",
+  "section": "Fiction",
+  "condition": "FAIR",
+  "conditionNotes": "Minor wear on cover"
+}
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "message": "Book copy updated successfully",
+  "data": {
+    "id": "copy-uuid",
+    "shelfLocation": "B-15",
+    "condition": "FAIR",
+    ...
+  }
+}
+```
+
+---
+
+### 15. Update Copy Status
+
+Change copy status (AVAILABLE, DAMAGED, LOST, etc.).
+
+**Endpoint:** `PATCH /books/:bookId/copies/:copyId/status`
+
+**Authorization:** ADMIN, LIBRARIAN
+
+**Request Body:**
+```json
+{
+  "status": "DAMAGED",
+  "reason": "Water damage",
+  "notes": "Needs repair or replacement"
+}
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "message": "Copy status updated to DAMAGED",
+  "data": {
+    "id": "copy-uuid",
+    "status": "DAMAGED",
+    ...
+  }
+}
+```
+
+**Note:** Automatically updates `availableCopies` counter.
+
+---
+
+### 16. Delete Copy
+
+Remove a physical copy from inventory.
+
+**Endpoint:** `DELETE /books/:bookId/copies/:copyId`
+
+**Authorization:** ADMIN only
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "message": "Book copy deleted successfully"
+}
+```
+
+**Note:** Cannot delete copies that are currently issued.
+
+---
+
+## BookCopy Role-Based Access
+
+| Endpoint | USER | LIBRARIAN | ADMIN |
+|----------|------|-----------|-------|
+| POST /books/:id/copies | ❌ | ✅ | ✅ |
+| GET /books/:id/copies | ❌ | ✅ | ✅ |
+| GET /books/:bookId/copies/:copyId | ❌ | ✅ | ✅ |
+| PATCH /books/:bookId/copies/:copyId | ❌ | ✅ | ✅ |
+| PATCH /books/:bookId/copies/:copyId/status | ❌ | ✅ | ✅ |
+| DELETE /books/:bookId/copies/:copyId | ❌ | ❌ | ✅ |
+
