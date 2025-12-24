@@ -1,557 +1,612 @@
 {
     "info": {
-        "name": "Books API",
         "_postman_id": "books-api-collection",
-        "description": "Complete Books Management API with CRUD operations, search, filtering, and Cloudinary integration",
+        "name": "Books API",
+        "description": "Complete Books API collection including BookCopy management endpoints",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
-    "item": [
-        {
-            "name": "Create Book",
-            "event": [
-                {
-                    "listen": "test",
-                    "script": {
-                        "exec": [
-                            "pm.test(\"Status code is 201\", function () {",
-                            "    pm.response.to.have.status(201);",
-                            "});",
-                            "",
-                            "pm.test(\"Response has success flag\", function () {",
-                            "    var jsonData = pm.response.json();",
-                            "    pm.expect(jsonData.success).to.be.true;",
-                            "});",
-                            "",
-                            "pm.test(\"Book created with correct ISBN\", function () {",
-                            "    var jsonData = pm.response.json();",
-                            "    pm.expect(jsonData.data.isbn).to.eql(\"9781234567890\");",
-                            "});",
-                            "",
-                            "// Save book ID for other requests",
-                            "if (pm.response.code === 201) {",
-                            "    var jsonData = pm.response.json();",
-                            "    pm.environment.set(\"bookId\", jsonData.data.id);",
-                            "}"
-                        ],
-                        "type": "text/javascript"
-                    }
-                }
-            ],
-            "request": {
-                "method": "POST",
-                "header": [
-                    {
-                        "key": "Authorization",
-                        "value": "Bearer {{accessToken}}",
-                        "type": "text"
-                    }
-                ],
-                "body": {
-                    "mode": "raw",
-                    "raw": "{\n  \"isbn\": \"9781234567890\",\n  \"title\": \"The Great Gatsby\",\n  \"author\": \"F. Scott Fitzgerald\",\n  \"publisher\": \"Scribner\",\n  \"publicationYear\": 1925,\n  \"category\": \"Fiction\",\n  \"genre\": \"Classic Literature\",\n  \"language\": \"English\",\n  \"totalCopies\": 5,\n  \"availableCopies\": 5,\n  \"price\": 299.99,\n  \"bookValue\": 500.00,\n  \"description\": \"A novel set in the Jazz Age that explores themes of decadence, idealism, and social upheaval.\"\n}",
-                    "options": {
-                        "raw": {
-                            "language": "json"
-                        }
-                    }
-                },
-                "url": {
-                    "raw": "{{baseUrl}}/books",
-                    "host": [
-                        "{{baseUrl}}"
-                    ],
-                    "path": [
-                        "books"
-                    ]
-                },
-                "description": "Create a new book. Requires ADMIN or LIBRARIAN role."
-            },
-            "response": []
-        },
-        {
-            "name": "List Books",
-            "event": [
-                {
-                    "listen": "test",
-                    "script": {
-                        "exec": [
-                            "pm.test(\"Status code is 200\", function () {",
-                            "    pm.response.to.have.status(200);",
-                            "});",
-                            "",
-                            "pm.test(\"Response contains data array\", function () {",
-                            "    var jsonData = pm.response.json();",
-                            "    pm.expect(jsonData.data).to.be.an('array');",
-                            "});",
-                            "",
-                            "pm.test(\"Response contains pagination metadata\", function () {",
-                            "    var jsonData = pm.response.json();",
-                            "    pm.expect(jsonData.meta).to.have.property('page');",
-                            "    pm.expect(jsonData.meta).to.have.property('limit');",
-                            "    pm.expect(jsonData.meta).to.have.property('total');",
-                            "    pm.expect(jsonData.meta).to.have.property('totalPages');",
-                            "});"
-                        ],
-                        "type": "text/javascript"
-                    }
-                }
-            ],
-            "request": {
-                "method": "GET",
-                "header": [
-                    {
-                        "key": "Authorization",
-                        "value": "Bearer {{accessToken}}",
-                        "type": "text"
-                    }
-                ],
-                "url": {
-                    "raw": "{{baseUrl}}/books?page=1&limit=10",
-                    "host": [
-                        "{{baseUrl}}"
-                    ],
-                    "path": [
-                        "books"
-                    ],
-                    "query": [
-                        {
-                            "key": "page",
-                            "value": "1"
-                        },
-                        {
-                            "key": "limit",
-                            "value": "10"
-                        },
-                        {
-                            "key": "category",
-                            "value": "Fiction",
-                            "disabled": true
-                        },
-                        {
-                            "key": "genre",
-                            "value": "Mystery",
-                            "disabled": true
-                        },
-                        {
-                            "key": "search",
-                            "value": "gatsby",
-                            "disabled": true
-                        },
-                        {
-                            "key": "sortBy",
-                            "value": "title",
-                            "disabled": true
-                        },
-                        {
-                            "key": "sortOrder",
-                            "value": "asc",
-                            "disabled": true
-                        },
-                        {
-                            "key": "availability",
-                            "value": "available",
-                            "disabled": true
-                        }
-                    ]
-                },
-                "description": "Get paginated list of books with optional filters and search"
-            },
-            "response": []
-        },
-        {
-            "name": "Get Book by ID",
-            "event": [
-                {
-                    "listen": "test",
-                    "script": {
-                        "exec": [
-                            "pm.test(\"Status code is 200\", function () {",
-                            "    pm.response.to.have.status(200);",
-                            "});",
-                            "",
-                            "pm.test(\"Response has book data\", function () {",
-                            "    var jsonData = pm.response.json();",
-                            "    pm.expect(jsonData.success).to.be.true;",
-                            "    pm.expect(jsonData.data).to.have.property('id');",
-                            "    pm.expect(jsonData.data).to.have.property('isbn');",
-                            "    pm.expect(jsonData.data).to.have.property('title');",
-                            "});"
-                        ],
-                        "type": "text/javascript"
-                    }
-                }
-            ],
-            "request": {
-                "method": "GET",
-                "header": [
-                    {
-                        "key": "Authorization",
-                        "value": "Bearer {{accessToken}}",
-                        "type": "text"
-                    }
-                ],
-                "url": {
-                    "raw": "{{baseUrl}}/books/{{bookId}}",
-                    "host": [
-                        "{{baseUrl}}"
-                    ],
-                    "path": [
-                        "books",
-                        "{{bookId}}"
-                    ]
-                },
-                "description": "Get detailed information about a specific book"
-            },
-            "response": []
-        },
-        {
-            "name": "Get Book by ISBN",
-            "event": [
-                {
-                    "listen": "test",
-                    "script": {
-                        "exec": [
-                            "pm.test(\"Status code is 200\", function () {",
-                            "    pm.response.to.have.status(200);",
-                            "});",
-                            "",
-                            "pm.test(\"Book has correct ISBN\", function () {",
-                            "    var jsonData = pm.response.json();",
-                            "    pm.expect(jsonData.data.isbn).to.eql(\"9781234567890\");",
-                            "});"
-                        ],
-                        "type": "text/javascript"
-                    }
-                }
-            ],
-            "request": {
-                "method": "GET",
-                "header": [
-                    {
-                        "key": "Authorization",
-                        "value": "Bearer {{accessToken}}",
-                        "type": "text"
-                    }
-                ],
-                "url": {
-                    "raw": "{{baseUrl}}/books/isbn/9781234567890",
-                    "host": [
-                        "{{baseUrl}}"
-                    ],
-                    "path": [
-                        "books",
-                        "isbn",
-                        "9781234567890"
-                    ]
-                },
-                "description": "Find a book by its ISBN number"
-            },
-            "response": []
-        },
-        {
-            "name": "Update Book",
-            "event": [
-                {
-                    "listen": "test",
-                    "script": {
-                        "exec": [
-                            "pm.test(\"Status code is 200\", function () {",
-                            "    pm.response.to.have.status(200);",
-                            "});",
-                            "",
-                            "pm.test(\"Book updated successfully\", function () {",
-                            "    var jsonData = pm.response.json();",
-                            "    pm.expect(jsonData.success).to.be.true;",
-                            "    pm.expect(jsonData.message).to.include(\"updated\");",
-                            "});"
-                        ],
-                        "type": "text/javascript"
-                    }
-                }
-            ],
-            "request": {
-                "method": "PATCH",
-                "header": [
-                    {
-                        "key": "Authorization",
-                        "value": "Bearer {{accessToken}}",
-                        "type": "text"
-                    }
-                ],
-                "body": {
-                    "mode": "raw",
-                    "raw": "{\n  \"title\": \"The Great Gatsby - Revised Edition\",\n  \"price\": 349.99,\n  \"description\": \"Updated description with new insights.\"\n}",
-                    "options": {
-                        "raw": {
-                            "language": "json"
-                        }
-                    }
-                },
-                "url": {
-                    "raw": "{{baseUrl}}/books/{{bookId}}",
-                    "host": [
-                        "{{baseUrl}}"
-                    ],
-                    "path": [
-                        "books",
-                        "{{bookId}}"
-                    ]
-                },
-                "description": "Update book information. Requires ADMIN or LIBRARIAN role."
-            },
-            "response": []
-        },
-        {
-            "name": "Upload Cover Image",
-            "event": [
-                {
-                    "listen": "test",
-                    "script": {
-                        "exec": [
-                            "pm.test(\"Status code is 200\", function () {",
-                            "    pm.response.to.have.status(200);",
-                            "});",
-                            "",
-                            "pm.test(\"Image uploaded successfully\", function () {",
-                            "    var jsonData = pm.response.json();",
-                            "    pm.expect(jsonData.success).to.be.true;",
-                            "    pm.expect(jsonData.data).to.have.property('url');",
-                            "});"
-                        ],
-                        "type": "text/javascript"
-                    }
-                }
-            ],
-            "request": {
-                "method": "POST",
-                "header": [
-                    {
-                        "key": "Authorization",
-                        "value": "Bearer {{accessToken}}",
-                        "type": "text"
-                    }
-                ],
-                "body": {
-                    "mode": "formdata",
-                    "formdata": [
-                        {
-                            "key": "coverImage",
-                            "type": "file",
-                            "src": "/path/to/cover.jpg",
-                            "description": "Book cover image (JPEG, PNG, WebP, max 5MB)"
-                        }
-                    ]
-                },
-                "url": {
-                    "raw": "{{baseUrl}}/books/{{bookId}}/cover",
-                    "host": [
-                        "{{baseUrl}}"
-                    ],
-                    "path": [
-                        "books",
-                        "{{bookId}}",
-                        "cover"
-                    ]
-                },
-                "description": "Upload or update book cover image. Requires ADMIN or LIBRARIAN role."
-            },
-            "response": []
-        },
-        {
-            "name": "Update Inventory",
-            "event": [
-                {
-                    "listen": "test",
-                    "script": {
-                        "exec": [
-                            "pm.test(\"Status code is 200\", function () {",
-                            "    pm.response.to.have.status(200);",
-                            "});",
-                            "",
-                            "pm.test(\"Inventory updated\", function () {",
-                            "    var jsonData = pm.response.json();",
-                            "    pm.expect(jsonData.success).to.be.true;",
-                            "    pm.expect(jsonData.data.totalCopies).to.eql(10);",
-                            "});"
-                        ],
-                        "type": "text/javascript"
-                    }
-                }
-            ],
-            "request": {
-                "method": "PATCH",
-                "header": [
-                    {
-                        "key": "Authorization",
-                        "value": "Bearer {{accessToken}}",
-                        "type": "text"
-                    }
-                ],
-                "body": {
-                    "mode": "raw",
-                    "raw": "{\n  \"quantity\": 10\n}",
-                    "options": {
-                        "raw": {
-                            "language": "json"
-                        }
-                    }
-                },
-                "url": {
-                    "raw": "{{baseUrl}}/books/{{bookId}}/inventory",
-                    "host": [
-                        "{{baseUrl}}"
-                    ],
-                    "path": [
-                        "books",
-                        "{{bookId}}",
-                        "inventory"
-                    ]
-                },
-                "description": "Update book inventory quantity. Requires ADMIN or LIBRARIAN role."
-            },
-            "response": []
-        },
-        {
-            "name": "Get Book Statistics",
-            "event": [
-                {
-                    "listen": "test",
-                    "script": {
-                        "exec": [
-                            "pm.test(\"Status code is 200\", function () {",
-                            "    pm.response.to.have.status(200);",
-                            "});",
-                            "",
-                            "pm.test(\"Statistics returned\", function () {",
-                            "    var jsonData = pm.response.json();",
-                            "    pm.expect(jsonData.data).to.have.property('totalCopies');",
-                            "    pm.expect(jsonData.data).to.have.property('availableCopies');",
-                            "    pm.expect(jsonData.data).to.have.property('borrowedCopies');",
-                            "    pm.expect(jsonData.data).to.have.property('availabilityPercentage');",
-                            "});"
-                        ],
-                        "type": "text/javascript"
-                    }
-                }
-            ],
-            "request": {
-                "method": "GET",
-                "header": [
-                    {
-                        "key": "Authorization",
-                        "value": "Bearer {{accessToken}}",
-                        "type": "text"
-                    }
-                ],
-                "url": {
-                    "raw": "{{baseUrl}}/books/{{bookId}}/stats",
-                    "host": [
-                        "{{baseUrl}}"
-                    ],
-                    "path": [
-                        "books",
-                        "{{bookId}}",
-                        "stats"
-                    ]
-                },
-                "description": "Get detailed statistics for a book"
-            },
-            "response": []
-        },
-        {
-            "name": "Check Availability",
-            "event": [
-                {
-                    "listen": "test",
-                    "script": {
-                        "exec": [
-                            "pm.test(\"Status code is 200\", function () {",
-                            "    pm.response.to.have.status(200);",
-                            "});",
-                            "",
-                            "pm.test(\"Availability status returned\", function () {",
-                            "    var jsonData = pm.response.json();",
-                            "    pm.expect(jsonData.data).to.have.property('isAvailable');",
-                            "});"
-                        ],
-                        "type": "text/javascript"
-                    }
-                }
-            ],
-            "request": {
-                "method": "GET",
-                "header": [
-                    {
-                        "key": "Authorization",
-                        "value": "Bearer {{accessToken}}",
-                        "type": "text"
-                    }
-                ],
-                "url": {
-                    "raw": "{{baseUrl}}/books/{{bookId}}/availability",
-                    "host": [
-                        "{{baseUrl}}"
-                    ],
-                    "path": [
-                        "books",
-                        "{{bookId}}",
-                        "availability"
-                    ]
-                },
-                "description": "Check if a book is currently available for borrowing"
-            },
-            "response": []
-        },
-        {
-            "name": "Delete Book",
-            "event": [
-                {
-                    "listen": "test",
-                    "script": {
-                        "exec": [
-                            "pm.test(\"Status code is 200\", function () {",
-                            "    pm.response.to.have.status(200);",
-                            "});",
-                            "",
-                            "pm.test(\"Book deleted successfully\", function () {",
-                            "    var jsonData = pm.response.json();",
-                            "    pm.expect(jsonData.success).to.be.true;",
-                            "    pm.expect(jsonData.message).to.include(\"deleted\");",
-                            "});"
-                        ],
-                        "type": "text/javascript"
-                    }
-                }
-            ],
-            "request": {
-                "method": "DELETE",
-                "header": [
-                    {
-                        "key": "Authorization",
-                        "value": "Bearer {{accessToken}}",
-                        "type": "text"
-                    }
-                ],
-                "url": {
-                    "raw": "{{baseUrl}}/books/{{bookId}}",
-                    "host": [
-                        "{{baseUrl}}"
-                    ],
-                    "path": [
-                        "books",
-                        "{{bookId}}"
-                    ]
-                },
-                "description": "Soft delete a book (sets isActive to false). Requires ADMIN role."
-            },
-            "response": []
-        }
-    ],
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+            }
+        ]
+    },
     "variable": [
         {
             "key": "baseUrl",
             "value": "http://localhost:3000",
             "type": "string"
+        },
+        {
+            "key": "accessToken",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "bookId",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "copyId",
+            "value": "",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "Book Management",
+            "item": [
+                {
+                    "name": "Create Book",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 201\", function () {",
+                                    "    pm.response.to.have.status(201);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Response has book data\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.success).to.be.true;",
+                                    "    pm.expect(jsonData.data).to.have.property('id');",
+                                    "    pm.expect(jsonData.data.totalCopies).to.equal(0);",
+                                    "    pm.expect(jsonData.data.availableCopies).to.equal(0);",
+                                    "    pm.collectionVariables.set('bookId', jsonData.data.id);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"isbn\": \"9781234567890\",\n  \"title\": \"The Great Gatsby\",\n  \"author\": \"F. Scott Fitzgerald\",\n  \"publisher\": \"Scribner\",\n  \"publicationYear\": 1925,\n  \"category\": \"Fiction\",\n  \"genre\": \"Classic Literature\",\n  \"language\": \"English\",\n  \"price\": 299.99,\n  \"bookValue\": 500.00,\n  \"description\": \"A novel set in the Jazz Age...\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/books",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "books"
+                            ]
+                        },
+                        "description": "Create a new book. Note: counters initialize to 0. Use Add Book Copies endpoint to add physical copies."
+                    }
+                },
+                {
+                    "name": "Get All Books",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Response has pagination\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.data).to.be.an('array');",
+                                    "    pm.expect(jsonData.meta).to.have.property('page');",
+                                    "    pm.expect(jsonData.meta).to.have.property('total');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/books?page=1&limit=10",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "books"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "10"
+                                },
+                                {
+                                    "key": "search",
+                                    "value": "",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "category",
+                                    "value": "",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "available",
+                                    "value": "true",
+                                    "disabled": true
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Book by ID",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Response has book data\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.data).to.have.property('id');",
+                                    "    pm.expect(jsonData.data).to.have.property('isbn');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/books/{{bookId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "books",
+                                "{{bookId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Book",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Book updated successfully\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.success).to.be.true;",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "PATCH",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"title\": \"The Great Gatsby - Updated\",\n  \"price\": 349.99\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/books/{{bookId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "books",
+                                "{{bookId}}"
+                            ]
+                        },
+                        "description": "Note: Cannot update totalCopies or availableCopies. Use BookCopy endpoints instead."
+                    }
+                },
+                {
+                    "name": "Delete Book",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Book soft deleted\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.success).to.be.true;",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/books/{{bookId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "books",
+                                "{{bookId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Book Stats",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Has statistics\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.data).to.have.property('totalCopies');",
+                                    "    pm.expect(jsonData.data).to.have.property('availableCopies');",
+                                    "    pm.expect(jsonData.data).to.have.property('borrowedCopies');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/books/{{bookId}}/stats",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "books",
+                                "{{bookId}}",
+                                "stats"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Check Availability",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Has availability status\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.data).to.have.property('available');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/books/{{bookId}}/availability",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "books",
+                                "{{bookId}}",
+                                "availability"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "BookCopy Management",
+            "item": [
+                {
+                    "name": "Add Book Copies",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 201\", function () {",
+                                    "    pm.response.to.have.status(201);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Copies added successfully\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.success).to.be.true;",
+                                    "    pm.expect(jsonData.data.copiesAdded).to.equal(3);",
+                                    "    pm.expect(jsonData.data.copies).to.be.an('array');",
+                                    "    pm.expect(jsonData.data.copies.length).to.equal(3);",
+                                    "    pm.collectionVariables.set('copyId', jsonData.data.copies[0].id);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"numberOfCopies\": 3,\n  \"shelfLocation\": \"A-12\",\n  \"section\": \"Fiction\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/books/{{bookId}}/copies",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "books",
+                                "{{bookId}}",
+                                "copies"
+                            ]
+                        },
+                        "description": "Add physical book copies. Auto-generates barcodes and copy numbers."
+                    }
+                },
+                {
+                    "name": "List Book Copies",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Has copies list\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.data.copies).to.be.an('array');",
+                                    "    pm.expect(jsonData.data).to.have.property('totalCopies');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/books/{{bookId}}/copies",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "books",
+                                "{{bookId}}",
+                                "copies"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Copy Details",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Has copy details\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.data).to.have.property('id');",
+                                    "    pm.expect(jsonData.data).to.have.property('barcode');",
+                                    "    pm.expect(jsonData.data).to.have.property('transactionHistory');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/books/{{bookId}}/copies/{{copyId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "books",
+                                "{{bookId}}",
+                                "copies",
+                                "{{copyId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Copy Metadata",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Copy updated\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.success).to.be.true;",
+                                    "    pm.expect(jsonData.data.shelfLocation).to.equal('B-15');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "PATCH",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"shelfLocation\": \"B-15\",\n  \"condition\": \"FAIR\",\n  \"conditionNotes\": \"Minor wear on cover\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/books/{{bookId}}/copies/{{copyId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "books",
+                                "{{bookId}}",
+                                "copies",
+                                "{{copyId}}"
+                            ]
+                        },
+                        "description": "Update copy location, condition, and notes. Does not affect counters."
+                    }
+                },
+                {
+                    "name": "Update Copy Status",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Status updated\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.success).to.be.true;",
+                                    "    pm.expect(jsonData.data.status).to.equal('DAMAGED');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "PATCH",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"status\": \"DAMAGED\",\n  \"reason\": \"Water damage\",\n  \"notes\": \"Pages 10-20 damaged\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/books/{{bookId}}/copies/{{copyId}}/status",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "books",
+                                "{{bookId}}",
+                                "copies",
+                                "{{copyId}}",
+                                "status"
+                            ]
+                        },
+                        "description": "Update copy status. Automatically adjusts availableCopies counter."
+                    }
+                },
+                {
+                    "name": "Delete Copy",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test(\"Status code is 200\", function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "pm.test(\"Copy deleted\", function () {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.expect(jsonData.success).to.be.true;",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/books/{{bookId}}/copies/{{copyId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "books",
+                                "{{bookId}}",
+                                "copies",
+                                "{{copyId}}"
+                            ]
+                        },
+                        "description": "Delete a copy. Updates totalCopies and availableCopies counters. Cannot delete issued copies."
+                    }
+                }
+            ]
         }
     ]
 }

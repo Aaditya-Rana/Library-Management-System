@@ -147,8 +147,6 @@ describe('Books E2E Tests', () => {
                     category: 'Fiction',
                     genre: 'Mystery',
                     language: 'English',
-                    totalCopies: 5,
-                    availableCopies: 5,
                     price: 299.99,
                     bookValue: 500,
                     description: 'A test book',
@@ -159,8 +157,9 @@ describe('Books E2E Tests', () => {
             }
 
             expect(response.status).toBe(201);
-            expect(response.body.success).toBe(true);
             expect(response.body.data.isbn).toBe('9999999991');
+            expect(response.body.data.totalCopies).toBe(0);
+            expect(response.body.data.availableCopies).toBe(0);
             createdBookId = response.body.data.id;
         });
 
@@ -371,8 +370,8 @@ describe('Books E2E Tests', () => {
         });
     });
 
-    describe('PATCH /books/:id/inventory - Update Inventory', () => {
-        it('should update inventory as admin', async () => {
+    describe('PATCH /books/:id/inventory - Update Inventory (Deprecated)', () => {
+        it('should throw 400 error (deprecated)', async () => {
             const response = await request(app.getHttpServer())
                 .patch(`/books/${createdBookId}/inventory`)
                 .set('Authorization', `Bearer ${adminToken}`)
@@ -380,30 +379,8 @@ describe('Books E2E Tests', () => {
                     quantity: 10,
                 });
 
-            expect(response.status).toBe(200);
-            expect(response.body.data.totalCopies).toBe(10);
-        });
-
-        it('should update inventory as librarian', async () => {
-            const response = await request(app.getHttpServer())
-                .patch(`/books/${createdBookId}/inventory`)
-                .set('Authorization', `Bearer ${librarianToken}`)
-                .send({
-                    quantity: 8,
-                });
-
-            expect(response.status).toBe(200);
-        });
-
-        it('should fail as regular user', async () => {
-            const response = await request(app.getHttpServer())
-                .patch(`/books/${createdBookId}/inventory`)
-                .set('Authorization', `Bearer ${userToken}`)
-                .send({
-                    quantity: 5,
-                });
-
-            expect(response.status).toBe(403);
+            expect(response.status).toBe(400);
+            expect(response.body.message).toMatch(/deprecated/i);
         });
     });
 
@@ -463,6 +440,186 @@ describe('Books E2E Tests', () => {
             });
 
             expect(book?.isActive).toBe(false);
+        });
+    });
+
+    describe('BookCopy Management', () => {
+        let testBookId: string;
+        let copyId: string;
+
+        beforeAll(async () => {
+            // Create a book for copy management tests
+            const bookRes = await request(app.getHttpServer())
+                .post('/books')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send({
+                    isbn: '9999999999',
+                    title: 'Copy Management Test Book',
+                    author: 'Test Author',
+                    category: 'Fiction',
+                    genre: 'Test',
+                    bookValue: 500,
+                });
+            testBookId = bookRes.body.data.id;
+        });
+
+        describe('POST /books/:id/copies - Add Copies', () => {
+            it('should add copies as admin', async () => {
+                const response = await request(app.getHttpServer())
+                    .post(`/books/${testBookId}/copies`)
+                    .set('Authorization', `Bearer ${adminToken}`)
+                    .send({
+                        numberOfCopies: 3,
+                        shelfLocation: 'A-12',
+                        section: 'Fiction',
+                    });
+
+                expect(response.status).toBe(201);
+                expect(response.body.success).toBe(true);
+                expect(response.body.data.copiesAdded).toBe(3);
+                expect(response.body.data.totalCopies).toBe(3);
+                expect(response.body.data.availableCopies).toBe(3);
+                expect(response.body.data.copies).toHaveLength(3);
+                copyId = response.body.data.copies[0].id;
+            });
+
+            it('should add copies as librarian', async () => {
+                const response = await request(app.getHttpServer())
+                    .post(`/books/${testBookId}/copies`)
+                    .set('Authorization', `Bearer ${librarianToken}`)
+                    .send({
+                        numberOfCopies: 2,
+                    });
+
+                expect(response.status).toBe(201);
+                expect(response.body.data.copiesAdded).toBe(2);
+            });
+
+            it('should fail as regular user', async () => {
+                const response = await request(app.getHttpServer())
+                    .post(`/books/${testBookId}/copies`)
+                    .set('Authorization', `Bearer ${userToken}`)
+                    .send({
+                        numberOfCopies: 1,
+                    });
+
+                expect(response.status).toBe(403);
+            });
+        });
+
+        describe('GET /books/:id/copies - List Copies', () => {
+            it('should list all copies', async () => {
+                const response = await request(app.getHttpServer())
+                    .get(`/books/${testBookId}/copies`)
+                    .set('Authorization', `Bearer ${librarianToken}`);
+
+                expect(response.status).toBe(200);
+                expect(response.body.success).toBe(true);
+                expect(response.body.data.copies).toHaveLength(5); // 3 + 2 from previous tests
+            });
+        });
+
+        describe('GET /books/:bookId/copies/:copyId - Get Copy Details', () => {
+            it('should get copy details', async () => {
+                const response = await request(app.getHttpServer())
+                    .get(`/books/${testBookId}/copies/${copyId}`)
+                    .set('Authorization', `Bearer ${librarianToken}`);
+
+                expect(response.status).toBe(200);
+                expect(response.body.success).toBe(true);
+                expect(response.body.data.id).toBe(copyId);
+                expect(response.body.data.transactionHistory).toBeDefined();
+            });
+        });
+
+        describe('PATCH /books/:bookId/copies/:copyId - Update Copy', () => {
+            it('should update copy metadata', async () => {
+                const response = await request(app.getHttpServer())
+                    .patch(`/books/${testBookId}/copies/${copyId}`)
+                    .set('Authorization', `Bearer ${librarianToken}`)
+                    .send({
+                        shelfLocation: 'B-15',
+                        condition: 'FAIR',
+                        conditionNotes: 'Minor wear',
+                    });
+
+                expect(response.status).toBe(200);
+                expect(response.body.success).toBe(true);
+                expect(response.body.data.shelfLocation).toBe('B-15');
+                expect(response.body.data.condition).toBe('FAIR');
+            });
+        });
+
+        describe('PATCH /books/:bookId/copies/:copyId/status - Update Status', () => {
+            it('should mark copy as DAMAGED', async () => {
+                const response = await request(app.getHttpServer())
+                    .patch(`/books/${testBookId}/copies/${copyId}/status`)
+                    .set('Authorization', `Bearer ${adminToken}`)
+                    .send({
+                        status: 'DAMAGED',
+                        reason: 'Water damage',
+                        notes: 'Pages 10-20 damaged',
+                    });
+
+                expect(response.status).toBe(200);
+                expect(response.body.success).toBe(true);
+                expect(response.body.data.status).toBe('DAMAGED');
+            });
+
+            it('should verify availableCopies decreased', async () => {
+                const bookRes = await request(app.getHttpServer())
+                    .get(`/books/${testBookId}`)
+                    .set('Authorization', `Bearer ${adminToken}`);
+
+                expect(bookRes.body.data.availableCopies).toBe(4); // 5 - 1 damaged
+            });
+
+            it('should mark copy back as AVAILABLE', async () => {
+                const response = await request(app.getHttpServer())
+                    .patch(`/books/${testBookId}/copies/${copyId}/status`)
+                    .set('Authorization', `Bearer ${adminToken}`)
+                    .send({
+                        status: 'AVAILABLE',
+                        reason: 'Repaired',
+                    });
+
+                expect(response.status).toBe(200);
+                expect(response.body.data.status).toBe('AVAILABLE');
+            });
+        });
+
+        describe('DELETE /books/:bookId/copies/:copyId - Delete Copy', () => {
+            it('should delete copy as admin', async () => {
+                const response = await request(app.getHttpServer())
+                    .delete(`/books/${testBookId}/copies/${copyId}`)
+                    .set('Authorization', `Bearer ${adminToken}`);
+
+                expect(response.status).toBe(200);
+                expect(response.body.success).toBe(true);
+            });
+
+            it('should verify counters updated', async () => {
+                const bookRes = await request(app.getHttpServer())
+                    .get(`/books/${testBookId}`)
+                    .set('Authorization', `Bearer ${adminToken}`);
+
+                expect(bookRes.body.data.totalCopies).toBe(4); // 5 - 1 deleted
+                expect(bookRes.body.data.availableCopies).toBe(4);
+            });
+
+            it('should fail as librarian', async () => {
+                const copies = await request(app.getHttpServer())
+                    .get(`/books/${testBookId}/copies`)
+                    .set('Authorization', `Bearer ${librarianToken}`);
+
+                const anotherCopyId = copies.body.data.copies[0].id;
+
+                const response = await request(app.getHttpServer())
+                    .delete(`/books/${testBookId}/copies/${anotherCopyId}`)
+                    .set('Authorization', `Bearer ${librarianToken}`);
+
+                expect(response.status).toBe(403); // Only ADMIN can delete
+            });
         });
     });
 });

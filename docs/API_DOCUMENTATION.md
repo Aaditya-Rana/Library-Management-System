@@ -54,17 +54,23 @@ Authorization: Bearer <your_jwt_token>
 - PATCH `/addresses/:id` - Update address
 - DELETE `/addresses/:id` - Delete address
 
-### Books (10 endpoints)
+### Books (15 endpoints)
 - GET `/books` - Search/list books
 - GET `/books/:id` - Get book details
-- POST `/books` - Add new book
+- POST `/books` - Add new book (counters initialize to 0)
 - PATCH `/books/:id` - Update book
 - DELETE `/books/:id` - Delete book
 - POST `/books/:id/upload-cover` - Upload book cover
-- POST `/books/:id/copies` - Add book copies
 - GET `/books/:id/availability` - Check availability
+- GET `/books/:id/stats` - Get book statistics
 - POST `/books/bulk-import` - Bulk import books
 - GET `/books/popular` - Get popular books
+- POST `/books/:id/copies` - Add physical book copies
+- GET `/books/:id/copies` - List all copies
+- GET `/books/:bookId/copies/:copyId` - Get copy details
+- PATCH `/books/:bookId/copies/:copyId` - Update copy metadata
+- PATCH `/books/:bookId/copies/:copyId/status` - Update copy status
+- DELETE `/books/:bookId/copies/:copyId` - Delete copy
 
 ### Transactions (8 endpoints)
 - GET `/transactions` - List transactions
