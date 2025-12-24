@@ -31,13 +31,13 @@ Create a new book in the system.
   "category": "Fiction",
   "genre": "Classic Literature",
   "language": "English",
-  "totalCopies": 5,
-  "availableCopies": 5,
   "price": 299.99,
   "bookValue": 500.00,
   "description": "A novel set in the Jazz Age..."
 }
 ```
+
+> **Note:** `totalCopies` and `availableCopies` are automatically initialized to 0. Use the `POST /books/:id/copies` endpoint to add physical book copies after creation.
 
 **Optional File Upload:**
 - Field name: `coverImage`
@@ -50,14 +50,24 @@ Create a new book in the system.
   "success": true,
   "message": "Book created successfully",
   "data": {
-    "id": "uuid",
+    "id": "clh1a2b3c4d5e6f7g8h9i0j1",
     "isbn": "9781234567890",
     "title": "The Great Gatsby",
     "author": "F. Scott Fitzgerald",
-    "coverImageUrl": "https://cloudinary.com/...",
+    "publisher": "Scribner",
+    "publicationYear": 1925,
+    "category": "Fiction",
+    "genre": "Classic Literature",
+    "language": "English",
+    "totalCopies": 0,
+    "availableCopies": 0,
+    "price": 299.99,
+    "bookValue": 500.00,
+    "description": "A novel set in the Jazz Age...",
+    "coverImageUrl": "https://res.cloudinary.com/...",
     "isActive": true,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    ...
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T10:30:00Z"
   }
 }
 ```
