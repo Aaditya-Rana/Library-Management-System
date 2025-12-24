@@ -2,42 +2,30 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import api from '@/services/api';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { fetchBooks, deleteBook } from '@/features/books/booksSlice';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Plus, Search, Edit2, Trash2, Copy, Upload } from 'lucide-react';
 import AuthGuard from '@/components/auth/AuthGuard';
 
-interface Book {
-    id: string;
-    title: string;
-    author: string;
-    isbn: string;
-    totalCopies: number;
-    availableCopies: number;
-}
-
 export default function AdminBooksPage() {
-    const [books, setBooks] = useState<Book[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const dispatch = useAppDispatch();
+    const { books, isLoading } = useAppSelector((state) => state.books);
     const [search, setSearch] = useState('');
 
-    const fetchBooks = async () => {
-        setIsLoading(true);
-        try {
-            const response = await api.get(`/books?search=${search}&limit=50`);
-            setBooks(response.data.data || []);
-        } catch (error) {
-            console.error('Failed to fetch books', error);
-        } finally {
-            setIsLoading(false);
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            dispatch(fetchBooks({ search, limit: 50 }));
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [search, dispatch]);
+
+    const handleDelete = async (id: string) => {
+        if (confirm('Are you sure you want to delete this book?')) {
+            await dispatch(deleteBook(id));
         }
     };
-
-    useEffect(() => {
-        const timer = setTimeout(fetchBooks, 500);
-        return () => clearTimeout(timer);
-    }, [search]);
 
     return (
         <AuthGuard allowedRoles={['ADMIN', 'SUPER_ADMIN']}>
@@ -112,17 +100,7 @@ export default function AdminBooksPage() {
                                                     <Edit2 className="w-4 h-4" />
                                                 </Link>
                                                 <button
-                                                    onClick={async () => {
-                                                        if (confirm('Are you sure you want to delete this book?')) {
-                                                            try {
-                                                                await api.delete(`/books/${book.id}`);
-                                                                setBooks(books.filter(b => b.id !== book.id));
-                                                            } catch (err) {
-                                                                console.error(err);
-                                                                alert('Failed to delete book');
-                                                            }
-                                                        }
-                                                    }}
+                                                    onClick={() => handleDelete(book.id)}
                                                     className="text-red-600 hover:text-red-900"
                                                     title="Delete"
                                                 >

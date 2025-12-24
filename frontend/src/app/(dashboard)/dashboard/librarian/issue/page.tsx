@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/services/api';
+import { useAppDispatch, useAppSelector } from '@/store/hooks'; // REDUX
+import { issueBook } from '@/features/transactions/transactionsSlice'; // REDUX
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import AuthGuard from '@/components/auth/AuthGuard';
@@ -10,7 +12,9 @@ import { ArrowLeft, CheckCircle, Search, User as UserIcon, Book as BookIcon, Cal
 
 export default function IssueBookPage() {
     const router = useRouter();
-    const [isLoading, setIsLoading] = useState(false);
+    const dispatch = useAppDispatch();
+    const { isLoading } = useAppSelector(state => state.transactions);
+
     const [success, setSuccess] = useState(false);
 
     const [issueDetails, setIssueDetails] = useState({
@@ -28,13 +32,7 @@ export default function IssueBookPage() {
     const [selectedUser, setSelectedUser] = useState<any>(null);
     const [selectedBook, setSelectedBook] = useState<any>(null);
 
-    useEffect(() => {
-        // Fetch initial data
-        searchUsers('');
-        searchBooks('');
-    }, []);
-
-    const searchUsers = async (query: string) => {
+    const searchUsers = useCallback(async (query: string) => {
         try {
             const res = await api.get(`/users?search=${query}&limit=10`);
             setFoundUsers(res.data.data.users || []);
@@ -42,58 +40,63 @@ export default function IssueBookPage() {
             console.error(e);
             setFoundUsers([]);
         }
-    };
+    }, []);
 
-    const searchBooks = async (query: string) => {
+    const searchBooks = useCallback(async (query: string) => {
         try {
             const res = await api.get(`/books?search=${query}&limit=10`);
-            // Books endpoint returns { data: [], meta: {} }, so data is in res.data.data
-            // If the structure is inconsistent, check res.data.data.data or res.data.data
-            // Based on BooksService, it returns { data: [...], meta: ... }
-            setFoundBooks(res.data.data || []);
+            setFoundBooks(res.data.data.data || res.data.data || []);
         } catch (e) {
             console.error(e);
             setFoundBooks([]);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        // Fetch initial data
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        searchUsers('');
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        searchBooks('');
+    }, []);
 
     const handleSubmit = async () => {
         if (!selectedUser || !selectedBook) return;
 
-        setIsLoading(true);
         setSuccess(false);
+
+        const payload: any = {
+            userId: selectedUser.id,
+            bookId: selectedBook.id,
+            isHomeDelivery: issueDetails.isHomeDelivery,
+            notes: issueDetails.notes
+        };
+        if (issueDetails.dueDate) {
+            payload.dueDate = new Date(issueDetails.dueDate).toISOString();
+        }
+
         try {
-            const payload: any = {
-                userId: selectedUser.id,
-                bookId: selectedBook.id,
-                isHomeDelivery: issueDetails.isHomeDelivery,
-                notes: issueDetails.notes
-            };
-            if (issueDetails.dueDate) {
-                payload.dueDate = new Date(issueDetails.dueDate).toISOString();
+            const resultAction = await dispatch(issueBook(payload));
+            if (issueBook.fulfilled.match(resultAction)) {
+                setSuccess(true);
+                // Reset form
+                setSelectedUser(null);
+                setSelectedBook(null);
+                // Refresh lists
+                searchUsers('');
+                searchBooks('');
+                setUserSearch('');
+                setBookSearch('');
+                setIssueDetails({
+                    dueDate: '',
+                    isHomeDelivery: false,
+                    notes: ''
+                });
+            } else {
+                alert(resultAction.payload || 'Failed to issue book.');
             }
-
-            await api.post('/transactions/issue', payload);
-            setSuccess(true);
-
-            // Reset form
-            setSelectedUser(null);
-            setSelectedBook(null);
-            // Refresh lists instead of clearing
-            searchUsers('');
-            searchBooks('');
-            setUserSearch('');
-            setBookSearch('');
-            setIssueDetails({
-                dueDate: '',
-                isHomeDelivery: false,
-                notes: ''
-            });
         } catch (error: any) {
             console.error('Failed to issue book', error);
-            alert(error.response?.data?.message || 'Failed to issue book.');
-        } finally {
-            setIsLoading(false);
         }
     };
 

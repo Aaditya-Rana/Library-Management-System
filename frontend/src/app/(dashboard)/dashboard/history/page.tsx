@@ -1,59 +1,31 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { useAppSelector } from '@/store/hooks';
-import api from '@/services/api';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { fetchAllTransactions, fetchUserHistory } from '@/features/transactions/transactionsSlice';
 import { Button } from '@/components/ui/Button';
 import { BookOpen, Calendar, CheckCircle, AlertOctagon } from 'lucide-react';
-
-interface Transaction {
-    id: string;
-    book: {
-        title: string;
-        author: string;
-    };
-    user?: {
-        firstName: string;
-        lastName: string;
-        email: string;
-    };
-    issueDate: string;
-    dueDate: string;
-    returnDate?: string;
-    status: 'ISSUED' | 'RETURNED' | 'OVERDUE' | 'RENEWED';
-    fineAmount?: number;
-}
-
+import { Transaction } from '@/types';
 
 export default function HistoryPage() {
     const { user } = useAppSelector((state) => state.auth);
-    const [transactions, setTransactions] = useState<Transaction[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const { transactions, isLoading, error } = useAppSelector((state) => state.transactions);
+    const dispatch = useAppDispatch();
+
+    // Local filter state (could be moved to Redux if we wanted persistent filters, but local is fine)
     const [filter, setFilter] = useState<'ALL' | 'ISSUED' | 'RENEWED' | 'RETURNED' | 'OVERDUE'>('ALL');
 
     const isAdminOrLibrarian = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN' || user?.role === 'LIBRARIAN';
 
     useEffect(() => {
-        const fetchHistory = async () => {
-            if (!user) return;
-            try {
-                // If Admin/Librarian, fetch ALL transactions. If Student, fetch personal history.
-                const endpoint = isAdminOrLibrarian
-                    ? `/transactions?limit=100`
-                    : `/transactions/user/${user.id}?limit=100`;
+        if (!user) return;
 
-                const response = await api.get(endpoint);
-                setTransactions(response.data.data || []);
-            } catch (error) {
-                console.error('Failed to fetch history', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchHistory();
-    }, [user, isAdminOrLibrarian]);
+        if (isAdminOrLibrarian) {
+            dispatch(fetchAllTransactions({ limit: 100 }));
+        } else {
+            dispatch(fetchUserHistory({ userId: user.id, limit: 100 }));
+        }
+    }, [dispatch, user, isAdminOrLibrarian]);
 
     const filteredTransactions = transactions.filter(t =>
         filter === 'ALL' ? true : t.status === filter
@@ -113,8 +85,8 @@ export default function HistoryPage() {
                                                     <BookOpen className="h-5 w-5 text-gray-400" />
                                                 </div>
                                                 <div className="ml-4">
-                                                    <div className="text-sm font-medium text-gray-900">{t.book.title}</div>
-                                                    <div className="text-sm text-gray-500">{t.book.author}</div>
+                                                    <div className="text-sm font-medium text-gray-900">{t.book?.title || 'Unknown'}</div>
+                                                    <div className="text-sm text-gray-500">{t.book?.author}</div>
                                                 </div>
                                             </div>
                                         </td>
@@ -127,10 +99,10 @@ export default function HistoryPage() {
                                             </td>
                                         )}
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {new Date(t.issueDate).toLocaleDateString()}
+                                            {t.issueDate ? new Date(t.issueDate).toLocaleDateString() : '-'}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {new Date(t.dueDate).toLocaleDateString()}
+                                            {t.dueDate ? new Date(t.dueDate).toLocaleDateString() : '-'}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${t.status === 'RETURNED' ? 'bg-gray-100 text-gray-800' :
@@ -157,7 +129,9 @@ export default function HistoryPage() {
                 ) : (
                     <div className="p-12 text-center text-gray-500">
                         <Calendar className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-                        <p className="text-lg font-medium text-gray-900">No transactions found</p>
+                        <p className="text-lg font-medium text-gray-900">
+                            {error ? `Error: ${error}` : 'No transactions found'}
+                        </p>
                     </div>
                 )}
             </div>

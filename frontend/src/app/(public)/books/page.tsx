@@ -3,27 +3,18 @@
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import api from '@/services/api';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { fetchBooks } from '@/features/books/booksSlice';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { BookOpen, Star, Filter, Search } from 'lucide-react';
-import { useAppSelector } from '@/store/hooks';
-
-interface Book {
-    id: string;
-    title: string;
-    author: string;
-    coverImageUrl?: string;
-    averageRating?: number;
-    availableCopies: number;
-}
+import { BookOpen, Star, Filter, Search, Loader2 } from 'lucide-react';
 
 function BookListingContent() {
-    const [books, setBooks] = useState<Book[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const searchParams = useSearchParams();
-    const router = useRouter();
+    const dispatch = useAppDispatch();
+    const { books, isLoading } = useAppSelector((state) => state.books);
     const { isAuthenticated } = useAppSelector((state) => state.auth);
+
+    const searchParams = useSearchParams();
 
     const [filters, setFilters] = useState({
         search: searchParams.get('search') || '',
@@ -32,28 +23,16 @@ function BookListingContent() {
     });
 
     useEffect(() => {
-        const fetchBooks = async () => {
-            if (!isAuthenticated) {
-                setIsLoading(false);
-                return;
-            }
-            setIsLoading(true);
-            try {
-                const params = new URLSearchParams();
-                Object.entries(filters).forEach(([key, value]) => {
-                    if (value) params.append(key, value);
-                });
-                const response = await api.get(`/books?${params.toString()}`);
-                setBooks(response.data.data || []);
-            } catch (error) {
-                console.error('Failed to fetch books', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
+        if (!isAuthenticated) return;
 
-        fetchBooks();
-    }, [filters, isAuthenticated]);
+        // Debounce or just fetch effect
+        const params: any = {};
+        if (filters.search) params.search = filters.search;
+        if (filters.genre) params.genre = filters.genre;
+        if (filters.availability) params.availability = filters.availability;
+        // Add limit if needed
+        dispatch(fetchBooks(params));
+    }, [dispatch, filters, isAuthenticated]);
 
     const handleFilterChange = (key: string, value: string) => {
         setFilters(prev => ({ ...prev, [key]: value }));
@@ -143,9 +122,9 @@ function BookListingContent() {
                                 <Link key={book.id} href={`/books/${book.id}`}>
                                     <div className="group bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                                         <div className="aspect-[2/3] relative bg-gray-100">
-                                            {book.coverImageUrl ? (
+                                            {book.coverImage ? (
                                                 <img
-                                                    src={book.coverImageUrl}
+                                                    src={book.coverImage}
                                                     alt={book.title}
                                                     className="w-full h-full object-cover"
                                                 />
@@ -163,7 +142,7 @@ function BookListingContent() {
                                             <div className="flex items-center justify-between text-sm">
                                                 <div className="flex items-center text-amber-500">
                                                     <Star className="w-4 h-4 fill-current mr-1" />
-                                                    <span>{book.averageRating || 'N/A'}</span>
+                                                    <span>N/A</span>
                                                 </div>
                                                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${book.availableCopies > 0
                                                     ? 'bg-green-100 text-green-700'

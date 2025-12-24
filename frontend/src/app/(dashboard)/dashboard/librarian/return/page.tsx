@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import api from '@/services/api';
+import { useAppDispatch, useAppSelector } from '@/store/hooks'; // REDUX
+import { fetchAllTransactions, returnBook } from '@/features/transactions/transactionsSlice'; // REDUX
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import AuthGuard from '@/components/auth/AuthGuard';
@@ -10,40 +11,26 @@ import { ArrowLeft, CheckCircle } from 'lucide-react';
 
 export default function ReturnBookPage() {
     const router = useRouter();
+    const dispatch = useAppDispatch();
+
+    // Select state from Redux
+    const { transactions: searchResults, isLoading } = useAppSelector(state => state.transactions);
+
     const [step, setStep] = useState<'search' | 'confirm'>('search');
-    const [isLoading, setIsLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [searchResults, setSearchResults] = useState<any[]>([]);
     const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
     const [returnDetails, setReturnDetails] = useState<any>(null);
 
     useEffect(() => {
-        // Fetch initial active transactions
-        fetchTransactions('');
-    }, []);
-
-    const fetchTransactions = async (query: string) => {
-        setIsLoading(true);
-        try {
-            const url = query
-                ? `/transactions?search=${query}&status=ISSUED`
-                : `/transactions?status=ISSUED&limit=20`; // Default to recent issued
-
-            const response = await api.get(url);
-            setSearchResults(response.data.data || []);
-        } catch (error) {
-            console.error('Fetch failed', error);
-            // Don't alert on initial fetch fail, just log
-            if (query) alert('Search failed');
-        } finally {
-            setIsLoading(false);
-        }
-    };
+        // Fetch initial active transactions (Default: limit 20, status ISSUED)
+        dispatch(fetchAllTransactions({ status: 'ISSUED', limit: 20 }));
+    }, [dispatch]);
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
-        fetchTransactions(searchQuery);
+        // Dispatch search thunk
+        dispatch(fetchAllTransactions({ search: searchQuery, status: 'ISSUED', limit: 20 }));
     };
 
     const handleSelect = (transaction: any) => {
@@ -53,24 +40,28 @@ export default function ReturnBookPage() {
 
     const handleConfirmReturn = async () => {
         if (!selectedTransaction) return;
-        setIsLoading(true);
+
         try {
-            // POST /transactions/:id/return
-            const res = await api.post(`/transactions/${selectedTransaction.id}/return`, {});
-            setReturnDetails(res.data.data);
-            setSuccess(true);
+            // Dispatch return action
+            const resultAction = await dispatch(returnBook(selectedTransaction.id));
+
+            if (returnBook.fulfilled.match(resultAction)) {
+                setReturnDetails(resultAction.payload.data);
+                setSuccess(true);
+            } else {
+                // Handle error
+                alert(resultAction.payload || 'Return failed');
+            }
         } catch (error: any) {
             console.error('Return failed', error);
-            alert(error.response?.data?.message || 'Return failed');
-        } finally {
-            setIsLoading(false);
         }
     };
 
     const reset = () => {
         setStep('search');
         setSuccess(false);
-        setSearchResults([]);
+        // Refresh default list
+        dispatch(fetchAllTransactions({ status: 'ISSUED', limit: 20 }));
         setSelectedTransaction(null);
         setReturnDetails(null);
         setSearchQuery('');
@@ -137,7 +128,7 @@ export default function ReturnBookPage() {
                                         <Button size="sm" onClick={() => handleSelect(t)}>Return Book</Button>
                                     </div>
                                 ))}
-                                {searchResults.length === 0 && (
+                                {searchResults.length === 0 && !isLoading && (
                                     <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
                                         No active issued transactions found.
                                     </div>
