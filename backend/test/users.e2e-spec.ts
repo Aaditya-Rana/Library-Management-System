@@ -28,6 +28,16 @@ describe('Users E2E Tests', () => {
         await app.init();
 
         // Clean up test data
+        await prisma.transaction.deleteMany({
+            where: {
+                user: {
+                    email: {
+                        contains: '@userstest.com',
+                    },
+                },
+            },
+        });
+
         await prisma.user.deleteMany({
             where: {
                 email: {
@@ -108,6 +118,16 @@ describe('Users E2E Tests', () => {
 
     afterAll(async () => {
         // Clean up
+        await prisma.transaction.deleteMany({
+            where: {
+                user: {
+                    email: {
+                        contains: '@userstest.com',
+                    },
+                },
+            },
+        });
+
         await prisma.user.deleteMany({
             where: {
                 email: {

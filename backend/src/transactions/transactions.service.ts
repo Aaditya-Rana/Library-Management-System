@@ -285,6 +285,19 @@ export class TransactionsService {
         if (userId) where.userId = userId;
         if (bookId) where.bookId = bookId;
 
+        if (queryDto.search) {
+            where.OR = [
+                // Search by User
+                { user: { firstName: { contains: queryDto.search, mode: 'insensitive' } } },
+                { user: { lastName: { contains: queryDto.search, mode: 'insensitive' } } },
+                { user: { email: { contains: queryDto.search, mode: 'insensitive' } } },
+                // Search by Book
+                { book: { title: { contains: queryDto.search, mode: 'insensitive' } } },
+                { book: { isbn: { contains: queryDto.search, mode: 'insensitive' } } },
+                { bookCopy: { barcode: { contains: queryDto.search, mode: 'insensitive' } } }, // Assuming we want to support barcode scan here too
+            ];
+        }
+
         if (overdue) {
             where.dueDate = { lt: new Date() };
             where.status = TransactionStatus.ISSUED;

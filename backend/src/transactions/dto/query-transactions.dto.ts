@@ -37,6 +37,10 @@ export class QueryTransactionsDto {
     bookId?: string;
 
     @IsOptional()
+    @IsString()
+    search?: string;
+
+    @IsOptional()
     @IsBoolean()
     @Type(() => Boolean)
     overdue?: boolean;
