@@ -208,7 +208,7 @@ describe('BooksService', () => {
         });
 
         it('should upload cover image if provided', async () => {
-            const mockFile: any = { mimetype: 'image/jpeg', size: 1024 };
+            const mockFile = { mimetype: 'image/jpeg', size: 1024 } as Express.Multer.File;
             mockPrismaService.book.findUnique.mockResolvedValue(null);
             mockCloudinaryService.uploadImage.mockResolvedValue({
                 secure_url: 'https://cloudinary.com/uploaded.jpg',

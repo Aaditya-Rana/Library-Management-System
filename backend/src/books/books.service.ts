@@ -240,7 +240,7 @@ export class BooksService {
      * - To add copies: use addBookCopies(bookId, { numberOfCopies: n })
      * - To remove copies: use deleteBookCopy(bookId, copyId)
      */
-    async updateInventory(id: string, quantity: number) {
+    async updateInventory(_id: string, _quantity: number) {
         throw new BadRequestException(
             'updateInventory is deprecated. Use addBookCopies() to add copies or deleteBookCopy() to remove copies. ' +
             'This ensures proper sync between Book counters and BookCopy records.'
