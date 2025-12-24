@@ -17,6 +17,17 @@ describe('BooksService', () => {
             create: jest.fn(),
             update: jest.fn(),
         },
+        bookCopy: {
+            findMany: jest.fn(),
+            findFirst: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+            delete: jest.fn(),
+        },
+        transaction: {
+            findFirst: jest.fn(),
+        },
+        $transaction: jest.fn(),
     };
 
     const mockCloudinaryService = {
@@ -381,6 +392,233 @@ describe('BooksService', () => {
             const result = await service.checkAvailability('1');
 
             expect(result).toBe(false);
+        });
+    });
+
+    describe('addBookCopies', () => {
+        it('should add multiple copies successfully', async () => {
+            const bookId = '1';
+            const dto = { numberOfCopies: 3, shelfLocation: 'A-12', section: 'Fiction' };
+
+            mockPrismaService.book.findUnique.mockResolvedValue({
+                ...mockBook,
+                copies: [],
+            });
+
+            mockPrismaService.$transaction.mockImplementation(async (callback) => {
+                return callback({
+                    bookCopy: {
+                        create: jest.fn().mockResolvedValue({
+                            id: 'copy-1',
+                            copyNumber: '001',
+                            barcode: 'BC-12345678-001',
+                            status: 'AVAILABLE',
+                        }),
+                    },
+                    book: {
+                        update: jest.fn().mockResolvedValue({
+                            ...mockBook,
+                            totalCopies: 3,
+                            availableCopies: 3,
+                        }),
+                    },
+                });
+            });
+
+            const result = await service.addBookCopies(bookId, dto);
+
+            expect(result.success).toBe(true);
+            expect(result.data.copiesAdded).toBe(3);
+        });
+
+        it('should throw NotFoundException if book not found', async () => {
+            mockPrismaService.book.findUnique.mockResolvedValue(null);
+
+            await expect(
+                service.addBookCopies('1', { numberOfCopies: 1 }),
+            ).rejects.toThrow(NotFoundException);
+        });
+    });
+
+    describe('getBookCopies', () => {
+        it('should return all copies for a book', async () => {
+            mockPrismaService.book.findUnique.mockResolvedValue(mockBook);
+            mockPrismaService.bookCopy = {
+                findMany: jest.fn().mockResolvedValue([
+                    {
+                        id: 'copy-1',
+                        copyNumber: '001',
+                        barcode: 'BC-001',
+                        status: 'AVAILABLE',
+                        condition: 'GOOD',
+                        transactions: [],
+                    },
+                ]),
+            };
+
+            const result = await service.getBookCopies('1');
+
+            expect(result.success).toBe(true);
+            expect(result.data.copies).toHaveLength(1);
+        });
+
+        it('should throw NotFoundException if book not found', async () => {
+            mockPrismaService.book.findUnique.mockResolvedValue(null);
+
+            await expect(service.getBookCopies('1')).rejects.toThrow(NotFoundException);
+        });
+    });
+
+    describe('getBookCopyById', () => {
+        it('should return copy with transaction history', async () => {
+            mockPrismaService.bookCopy = {
+                findFirst: jest.fn().mockResolvedValue({
+                    id: 'copy-1',
+                    copyNumber: '001',
+                    book: mockBook,
+                    transactions: [],
+                }),
+            };
+
+            const result = await service.getBookCopyById('1', 'copy-1');
+
+            expect(result.success).toBe(true);
+            expect(result.data.id).toBe('copy-1');
+        });
+
+        it('should throw NotFoundException if copy not found', async () => {
+            mockPrismaService.bookCopy = {
+                findFirst: jest.fn().mockResolvedValue(null),
+            };
+
+            await expect(service.getBookCopyById('1', 'copy-1')).rejects.toThrow(
+                NotFoundException,
+            );
+        });
+    });
+
+    describe('updateBookCopy', () => {
+        it('should update copy details', async () => {
+            const dto = { shelfLocation: 'B-15', condition: 'FAIR' as any };
+
+            mockPrismaService.bookCopy = {
+                findFirst: jest.fn().mockResolvedValue({ id: 'copy-1' }),
+                update: jest.fn().mockResolvedValue({
+                    id: 'copy-1',
+                    shelfLocation: 'B-15',
+                    condition: 'FAIR',
+                }),
+            };
+
+            const result = await service.updateBookCopy('1', 'copy-1', dto);
+
+            expect(result.success).toBe(true);
+            expect(result.data.shelfLocation).toBe('B-15');
+        });
+
+        it('should throw NotFoundException if copy not found', async () => {
+            mockPrismaService.bookCopy = {
+                findFirst: jest.fn().mockResolvedValue(null),
+            };
+
+            await expect(
+                service.updateBookCopy('1', 'copy-1', {}),
+            ).rejects.toThrow(NotFoundException);
+        });
+    });
+
+    describe('updateCopyStatus', () => {
+        it('should update status and decrement availableCopies', async () => {
+            const dto = { status: 'DAMAGED' as any, reason: 'Water damage' };
+
+            mockPrismaService.bookCopy = {
+                findFirst: jest.fn().mockResolvedValue({
+                    id: 'copy-1',
+                    status: 'AVAILABLE',
+                }),
+            };
+
+            mockPrismaService.transaction = {
+                findFirst: jest.fn().mockResolvedValue(null),
+            };
+
+            mockPrismaService.$transaction.mockImplementation(async (callback) => {
+                return callback({
+                    bookCopy: {
+                        update: jest.fn().mockResolvedValue({
+                            id: 'copy-1',
+                            status: 'DAMAGED',
+                        }),
+                    },
+                    book: {
+                        update: jest.fn().mockResolvedValue(mockBook),
+                    },
+                });
+            });
+
+            const result = await service.updateCopyStatus('1', 'copy-1', dto);
+
+            expect(result.success).toBe(true);
+            expect(result.message).toContain('DAMAGED');
+        });
+
+        it('should throw BadRequestException if copy is currently issued', async () => {
+            mockPrismaService.bookCopy = {
+                findFirst: jest.fn().mockResolvedValue({ id: 'copy-1', status: 'AVAILABLE' }),
+            };
+
+            mockPrismaService.transaction = {
+                findFirst: jest.fn().mockResolvedValue({ id: 'trans-1' }),
+            };
+
+            await expect(
+                service.updateCopyStatus('1', 'copy-1', { status: 'DAMAGED' as any }),
+            ).rejects.toThrow(BadRequestException);
+        });
+    });
+
+    describe('deleteBookCopy', () => {
+        it('should delete copy and update counters', async () => {
+            mockPrismaService.bookCopy = {
+                findFirst: jest.fn().mockResolvedValue({
+                    id: 'copy-1',
+                    status: 'AVAILABLE',
+                }),
+            };
+
+            mockPrismaService.transaction = {
+                findFirst: jest.fn().mockResolvedValue(null),
+            };
+
+            mockPrismaService.$transaction.mockImplementation(async (callback) => {
+                return callback({
+                    bookCopy: {
+                        delete: jest.fn().mockResolvedValue({ id: 'copy-1' }),
+                    },
+                    book: {
+                        update: jest.fn().mockResolvedValue(mockBook),
+                    },
+                });
+            });
+
+            const result = await service.deleteBookCopy('1', 'copy-1');
+
+            expect(result.success).toBe(true);
+            expect(result.message).toContain('deleted');
+        });
+
+        it('should throw BadRequestException if copy is currently issued', async () => {
+            mockPrismaService.bookCopy = {
+                findFirst: jest.fn().mockResolvedValue({ id: 'copy-1' }),
+            };
+
+            mockPrismaService.transaction = {
+                findFirst: jest.fn().mockResolvedValue({ id: 'trans-1' }),
+            };
+
+            await expect(service.deleteBookCopy('1', 'copy-1')).rejects.toThrow(
+                BadRequestException,
+            );
         });
     });
 
