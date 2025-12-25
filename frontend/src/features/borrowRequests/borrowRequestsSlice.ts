@@ -1,0 +1,180 @@
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import api from '@/services/api';
+import { BorrowRequest, Pagination } from '@/types';
+
+export interface BorrowRequestsState {
+    borrowRequests: BorrowRequest[];
+    currentRequest: BorrowRequest | null;
+    isLoading: boolean;
+    error: string | null;
+    pagination: Pagination | null;
+}
+
+const initialState: BorrowRequestsState = {
+    borrowRequests: [],
+    currentRequest: null,
+    isLoading: false,
+    error: null,
+    pagination: null,
+};
+
+// Create borrow request (USER)
+export const createBorrowRequest = createAsyncThunk(
+    'borrowRequests/create',
+    async (data: { bookId: string; notes?: string }, { rejectWithValue }) => {
+        try {
+            const response = await api.post('/transactions/requests', data);
+            return response.data;
+        } catch (error: any) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to create borrow request');
+        }
+    }
+);
+
+// Get user's borrow requests
+export const fetchMyBorrowRequests = createAsyncThunk(
+    'borrowRequests/fetchMy',
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await api.get('/transactions/requests/my');
+            return response.data;
+        } catch (error: any) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to fetch requests');
+        }
+    }
+);
+
+// Get all borrow requests (LIBRARIAN/ADMIN)
+export const fetchAllBorrowRequests = createAsyncThunk(
+    'borrowRequests/fetchAll',
+    async (params: { page?: number; limit?: number; status?: string } = {}, { rejectWithValue }) => {
+        try {
+            const queryParams = new URLSearchParams();
+            if (params.page) queryParams.append('page', params.page.toString());
+            if (params.limit) queryParams.append('limit', params.limit.toString());
+            if (params.status) queryParams.append('status', params.status);
+
+            const response = await api.get(`/transactions/requests?${queryParams.toString()}`);
+            return response.data;
+        } catch (error: any) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to fetch requests');
+        }
+    }
+);
+
+// Approve borrow request (LIBRARIAN/ADMIN)
+export const approveBorrowRequest = createAsyncThunk(
+    'borrowRequests/approve',
+    async ({ id, dueDate }: { id: string; dueDate?: string }, { rejectWithValue }) => {
+        try {
+            const response = await api.post(`/transactions/requests/${id}/approve`, { dueDate });
+            return response.data;
+        } catch (error: any) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to approve request');
+        }
+    }
+);
+
+// Reject borrow request (LIBRARIAN/ADMIN)
+export const rejectBorrowRequest = createAsyncThunk(
+    'borrowRequests/reject',
+    async ({ id, reason }: { id: string; reason?: string }, { rejectWithValue }) => {
+        try {
+            const response = await api.post(`/transactions/requests/${id}/reject`, { reason });
+            return response.data;
+        } catch (error: any) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to reject request');
+        }
+    }
+);
+
+// Cancel borrow request (USER)
+export const cancelBorrowRequest = createAsyncThunk(
+    'borrowRequests/cancel',
+    async (id: string, { rejectWithValue }) => {
+        try {
+            await api.delete(`/transactions/requests/${id}`);
+            return id;
+        } catch (error: any) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to cancel request');
+        }
+    }
+);
+
+const borrowRequestsSlice = createSlice({
+    name: 'borrowRequests',
+    initialState,
+    reducers: {
+        clearError: (state) => {
+            state.error = null;
+        },
+        resetRequests: (state) => {
+            state.borrowRequests = [];
+            state.pagination = null;
+        },
+    },
+    extraReducers: (builder) => {
+        builder
+            // Create Request
+            .addCase(createBorrowRequest.pending, (state) => {
+                state.isLoading = true;
+                state.error = null;
+            })
+            .addCase(createBorrowRequest.fulfilled, (state, action) => {
+                state.isLoading = false;
+                state.borrowRequests.unshift(action.payload.data);
+            })
+            .addCase(createBorrowRequest.rejected, (state, action) => {
+                state.isLoading = false;
+                state.error = action.payload as string;
+            })
+            // Fetch My Requests
+            .addCase(fetchMyBorrowRequests.pending, (state) => {
+                state.isLoading = true;
+                state.error = null;
+            })
+            .addCase(fetchMyBorrowRequests.fulfilled, (state, action) => {
+                state.isLoading = false;
+                state.borrowRequests = action.payload.data || [];
+            })
+            .addCase(fetchMyBorrowRequests.rejected, (state, action) => {
+                state.isLoading = false;
+                state.error = action.payload as string;
+            })
+            // Fetch All Requests
+            .addCase(fetchAllBorrowRequests.pending, (state) => {
+                state.isLoading = true;
+                state.error = null;
+            })
+            .addCase(fetchAllBorrowRequests.fulfilled, (state, action) => {
+                state.isLoading = false;
+                state.borrowRequests = action.payload.data || [];
+                state.pagination = action.payload.meta || null;
+            })
+            .addCase(fetchAllBorrowRequests.rejected, (state, action) => {
+                state.isLoading = false;
+                state.error = action.payload as string;
+            })
+            // Approve Request
+            .addCase(approveBorrowRequest.fulfilled, (state, action) => {
+                const index = state.borrowRequests.findIndex(r => r.id === action.payload.data.id);
+                if (index !== -1) {
+                    state.borrowRequests[index] = action.payload.data;
+                }
+            })
+            // Reject Request
+            .addCase(rejectBorrowRequest.fulfilled, (state, action) => {
+                const index = state.borrowRequests.findIndex(r => r.id === action.payload.data.id);
+                if (index !== -1) {
+                    state.borrowRequests[index] = action.payload.data;
+                }
+            })
+            // Cancel Request
+            .addCase(cancelBorrowRequest.fulfilled, (state, action) => {
+                state.borrowRequests = state.borrowRequests.filter(r => r.id !== action.payload);
+            });
+    },
+});
+
+export const { clearError, resetRequests } = borrowRequestsSlice.actions;
+export default borrowRequestsSlice.reducer;
