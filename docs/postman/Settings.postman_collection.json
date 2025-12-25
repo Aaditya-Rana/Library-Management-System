@@ -1,0 +1,387 @@
+{
+    "info": {
+        "name": "Library Management - Settings",
+        "description": "Settings management endpoints for configuring library operations, fines, membership tiers, and system preferences. Admin-only updates with read access for librarians.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Get All Settings",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                            "pm.test('Response has settings array', () => {",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    pm.expect(response.data.settings).to.be.an('array');",
+                            "    pm.expect(response.data.settings.length).to.be.greaterThan(0);",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{adminToken}}",
+                        "type": "text"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/settings",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "settings"
+                    ]
+                },
+                "description": "Get all library settings. Admin and librarian access only."
+            },
+            "response": []
+        },
+        {
+            "name": "Get Settings by Category",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                            "pm.test('Returns filtered settings', () => {",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    const settings = response.data.settings;",
+                            "    settings.forEach(setting => {",
+                            "        pm.expect(setting.category).to.equal('LIBRARY');",
+                            "    });",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{librarianToken}}",
+                        "type": "text"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/settings?category=LIBRARY",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "settings"
+                    ],
+                    "query": [
+                        {
+                            "key": "category",
+                            "value": "LIBRARY"
+                        }
+                    ]
+                },
+                "description": "Filter settings by category (LIBRARY, FINES, MEMBERSHIP, LOANS, SYSTEM)"
+            },
+            "response": []
+        },
+        {
+            "name": "Get Setting by Key",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                            "pm.test('Returns specific setting', () => {",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    pm.expect(response.data.setting.key).to.equal('library.name');",
+                            "    pm.expect(response.data.setting.value).to.exist;",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{adminToken}}",
+                        "type": "text"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/settings/library.name",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "settings",
+                        "library.name"
+                    ]
+                },
+                "description": "Get a specific setting by its key"
+            },
+            "response": []
+        },
+        {
+            "name": "Update String Setting",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                            "pm.test('Setting updated successfully', () => {",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    pm.expect(response.message).to.equal('Setting updated successfully');",
+                            "    pm.expect(response.data.setting.value).to.equal('Updated Library Name');",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "PATCH",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{adminToken}}",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"value\": \"Updated Library Name\"\n}"
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/settings/library.name",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "settings",
+                        "library.name"
+                    ]
+                },
+                "description": "Update a string setting value (Admin only)"
+            },
+            "response": []
+        },
+        {
+            "name": "Update Number Setting",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                            "pm.test('Numeric value updated', () => {",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.data.setting.value).to.equal(10);",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "PATCH",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{adminToken}}",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"value\": 10\n}"
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/settings/fines.per_day_amount",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "settings",
+                        "fines.per_day_amount"
+                    ]
+                },
+                "description": "Update a numeric setting value"
+            },
+            "response": []
+        },
+        {
+            "name": "Update Boolean Setting",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                            "pm.test('Boolean value updated', () => {",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(typeof response.data.setting.value).to.equal('boolean');",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "PATCH",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{adminToken}}",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"value\": false\n}"
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/settings/system.email_notifications",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "settings",
+                        "system.email_notifications"
+                    ]
+                },
+                "description": "Update a boolean setting value"
+            },
+            "response": []
+        },
+        {
+            "name": "Reset Setting to Default",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                            "pm.test('Setting reset successfully', () => {",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    pm.expect(response.message).to.equal('Setting reset to default successfully');",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{adminToken}}",
+                        "type": "text"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/settings/library.name/reset",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "settings",
+                        "library.name",
+                        "reset"
+                    ]
+                },
+                "description": "Reset a setting to its default value (Admin only)"
+            },
+            "response": []
+        },
+        {
+            "name": "Librarian Cannot Update (Test)",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Status code is 403', () => pm.response.to.have.status(403));",
+                            "pm.test('Access denied for librarian', () => {",
+                            "    pm.expect(pm.response.code).to.equal(403);",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "PATCH",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{librarianToken}}",
+                        "type": "text"
+                    },
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"value\": \"Test\"\n}"
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/settings/library.name",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "settings",
+                        "library.name"
+                    ]
+                },
+                "description": "Test that librarians cannot update settings (should return 403)"
+            },
+            "response": []
+        }
+    ],
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:3000",
+            "type": "string"
+        }
+    ]
+}
