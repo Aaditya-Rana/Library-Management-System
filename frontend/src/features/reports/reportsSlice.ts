@@ -84,7 +84,8 @@ const reportsSlice = createSlice({
             })
             .addCase(fetchDashboardStats.fulfilled, (state, action) => {
                 state.isLoading = false;
-                state.dashboardStats = action.payload.data;
+                // API returns { success: true, data: { stats: {...} } }
+                state.dashboardStats = action.payload.data?.stats || action.payload.data || null;
             })
             .addCase(fetchDashboardStats.rejected, (state, action) => {
                 state.isLoading = false;
@@ -97,7 +98,8 @@ const reportsSlice = createSlice({
             })
             .addCase(fetchPopularBooks.fulfilled, (state, action) => {
                 state.isLoading = false;
-                state.popularBooks = action.payload.data || [];
+                // API returns { success: true, data: { books: [...] } }
+                state.popularBooks = action.payload.data?.books || action.payload.data || [];
             })
             .addCase(fetchPopularBooks.rejected, (state, action) => {
                 state.isLoading = false;
@@ -110,7 +112,8 @@ const reportsSlice = createSlice({
             })
             .addCase(fetchRevenueReport.fulfilled, (state, action) => {
                 state.isLoading = false;
-                state.revenueData = action.payload.data || [];
+                // API returns { success: true, data: { revenue: [...] } }
+                state.revenueData = action.payload.data?.revenue || action.payload.data || [];
             })
             .addCase(fetchRevenueReport.rejected, (state, action) => {
                 state.isLoading = false;
