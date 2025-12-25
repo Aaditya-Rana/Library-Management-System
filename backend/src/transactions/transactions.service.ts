@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../common/services/prisma.service';
 import { BooksService } from '../books/books.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { IssueBookDto } from './dto/issue-book.dto';
 import { ReturnBookDto } from './dto/return-book.dto';
 import { RenewTransactionDto } from './dto/renew-transaction.dto';
@@ -18,6 +19,7 @@ export class TransactionsService {
     constructor(
         private prisma: PrismaService,
         private booksService: BooksService,
+        private notificationsService: NotificationsService,
     ) { }
 
     async issueBook(issueBookDto: IssueBookDto, librarianId?: string) {
@@ -122,6 +124,18 @@ export class TransactionsService {
             },
         });
 
+        // Send notification to user
+        try {
+            await this.notificationsService.sendBookIssuedNotification(
+                transaction.id,
+                transaction.userId,
+                transaction.book.title,
+            );
+        } catch (error) {
+            // Log error but don't fail the transaction
+            console.error('Failed to send book issued notification:', error);
+        }
+
         return transaction;
     }
 
@@ -200,6 +214,18 @@ export class TransactionsService {
                 availableCopies: { increment: 1 },
             },
         });
+
+        // Send notification to user
+        try {
+            await this.notificationsService.sendBookReturnedNotification(
+                updatedTransaction.id,
+                updatedTransaction.userId,
+                updatedTransaction.book.title,
+            );
+        } catch (error) {
+            // Log error but don't fail the transaction
+            console.error('Failed to send book returned notification:', error);
+        }
 
         return updatedTransaction;
     }

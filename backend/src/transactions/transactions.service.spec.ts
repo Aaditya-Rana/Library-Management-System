@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TransactionsService } from './transactions.service';
 import { PrismaService } from '../common/services/prisma.service';
 import { BooksService } from '../books/books.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import {
     NotFoundException,
     BadRequestException,
@@ -92,6 +93,13 @@ describe('TransactionsService', () => {
         bookCopy: mockBookCopy,
     };
 
+    const mockNotificationsService = {
+        sendBookIssuedNotification: jest.fn(),
+        sendBookReturnedNotification: jest.fn(),
+        sendBookDueReminderNotification: jest.fn(),
+        sendBookOverdueNotification: jest.fn(),
+    };
+
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
@@ -103,6 +111,10 @@ describe('TransactionsService', () => {
                 {
                     provide: BooksService,
                     useValue: mockBooksService,
+                },
+                {
+                    provide: NotificationsService,
+                    useValue: mockNotificationsService,
                 },
             ],
         }).compile();
