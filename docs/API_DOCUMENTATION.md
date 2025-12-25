@@ -72,7 +72,7 @@ Authorization: Bearer <your_jwt_token>
 - PATCH `/books/:bookId/copies/:copyId/status` - Update copy status
 - DELETE `/books/:bookId/copies/:copyId` - Delete copy
 
-### Transactions (8 endpoints)
+### Transactions (14 endpoints)
 - GET `/transactions` - List transactions
 - GET `/transactions/:id` - Get transaction details
 - POST `/transactions/issue` - Issue book (offline)
@@ -81,6 +81,12 @@ Authorization: Bearer <your_jwt_token>
 - PATCH `/transactions/:id/fine` - Update fine
 - GET `/transactions/overdue` - Get overdue transactions
 - GET `/transactions/user/:userId` - Get user transactions
+- POST `/transactions/request` - Create borrow request (USER)
+- GET `/transactions/requests` - List all requests (LIBRARIAN/ADMIN)
+- GET `/transactions/requests/my` - Get user's requests
+- POST `/transactions/requests/:id/approve` - Approve request (LIBRARIAN/ADMIN)
+- POST `/transactions/requests/:id/reject` - Reject request (LIBRARIAN/ADMIN)
+- DELETE `/transactions/requests/:id` - Cancel request (USER)
 
 ### Reservations (5 endpoints)
 - GET `/reservations` - List reservations
@@ -2312,3 +2318,216 @@ X-RateLimit-Reset: 1640098800
 **Total Endpoints:** 87  
 **API Version:** v1  
 **Last Updated:** 2025-12-21
+
+---
+
+### 4.9 Create Borrow Request (User-Initiated)
+
+**Endpoint:** `POST /transactions/request`
+
+**Access:** USER
+
+**Use Case:** User requests to borrow a book. Librarian reviews and approves/rejects later.
+
+**Request Body:**
+```json
+{
+  "bookId": "book-uuid-123",
+  "notes": "Need this book for my research project"
+}
+```
+
+**Response:** `201 Created`
+```json
+{
+  "success": true,
+  "message": "Borrow request created successfully",
+  "data": {
+    "borrowRequest": {
+      "id": "req-uuid-1",
+      "userId": "user-uuid-1",
+      "bookId": "book-uuid-123",
+      "status": "PENDING",
+      "notes": "Need this book for my research project",
+      "requestDate": "2025-12-25T10:00:00Z",
+      "createdAt": "2025-12-25T10:00:00Z"
+    }
+  }
+}
+```
+
+**cURL Example:**
+```bash
+curl -X POST https://api.yourdomain.com/v1/transactions/request \
+  -H "Authorization: Bearer YOUR_USER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "bookId": "book-uuid-123",
+    "notes": "Need for upcoming exam"
+  }'
+```
+
+---
+
+### 4.10 List All Borrow Requests (Librarian/Admin)
+
+**Endpoint:** `GET /transactions/requests`
+
+**Access:** LIBRARIAN, ADMIN
+
+**Query Parameters:**
+- `page` (optional): Page number (default: 1)
+- `limit` (optional): Items per page (default: 20)
+- `status` (optional): Filter by status (PENDING, APPROVED, REJECTED, FULFILLED, CANCELLED)
+- `userId` (optional): Filter by user ID
+- `bookId` (optional): Filter by book ID
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "borrowRequests": [
+      {
+        "id": "req-uuid-1",
+        "userId": "user-uuid-1",
+        "bookId": "book-uuid-123",
+        "status": "PENDING",
+        "notes": "Need for research",
+        "requestDate": "2025-12-25T10:00:00Z",
+        "user": {
+          "id": "user-uuid-1",
+          "firstName": "John",
+          "lastName": "Doe",
+          "email": "john@example.com"
+        },
+        "book": {
+          "id": "book-uuid-123",
+          "title": "The Great Gatsby",
+          "author": "F. Scott Fitzgerald",
+          "isbn": "978-0-7432-7356-5"
+        }
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 20,
+      "total": 15,
+      "totalPages": 1
+    }
+  }
+}
+```
+
+---
+
+### 4.11 Get User's Borrow Requests
+
+**Endpoint:** `GET /transactions/requests/my`
+
+**Access:** Authenticated users
+
+**Query Parameters:** Same as 4.10
+
+**Response:** Returns user's own borrow requests
+
+---
+
+### 4.12 Approve Borrow Request
+
+**Endpoint:** `POST /transactions/requests/:id/approve`
+
+**Access:** LIBRARIAN, ADMIN
+
+**Request Body:**
+```json
+{
+  "bookCopyId": "copy-uuid-1",
+  "dueDate": "2026-01-15T23:59:59Z",
+  "notes": "Approved with extended period"
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "message": "Borrow request approved and book issued",
+  "data": {
+    "borrowRequest": {
+      "id": "req-uuid-1",
+      "status": "FULFILLED",
+      "approvedBy": "librarian-uuid-1",
+      "approvedAt": "2025-12-25T11:00:00Z",
+      "transactionId": "trans-uuid-1"
+    },
+    "transaction": {
+      "id": "trans-uuid-1",
+      "userId": "user-uuid-1",
+      "bookCopyId": "copy-uuid-1",
+      "issueDate": "2025-12-25T11:00:00Z",
+      "dueDate": "2026-01-15T23:59:59Z",
+      "status": "ISSUED"
+    }
+  }
+}
+```
+
+**Note:** Approving automatically issues the book and creates a transaction.
+
+---
+
+### 4.13 Reject Borrow Request
+
+**Endpoint:** `POST /transactions/requests/:id/reject`
+
+**Access:** LIBRARIAN, ADMIN
+
+**Request Body:**
+```json
+{
+  "rejectionReason": "Book is reserved for another user"
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "message": "Borrow request rejected",
+  "data": {
+    "borrowRequest": {
+      "id": "req-uuid-1",
+      "status": "REJECTED",
+      "rejectedBy": "librarian-uuid-1",
+      "rejectedAt": "2025-12-25T11:00:00Z",
+      "rejectionReason": "Book is reserved for another user"
+    }
+  }
+}
+```
+
+---
+
+### 4.14 Cancel Borrow Request (User)
+
+**Endpoint:** `DELETE /transactions/requests/:id`
+
+**Access:** USER (own requests)
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "message": "Borrow request cancelled",
+  "data": {
+    "borrowRequest": {
+      "id": "req-uuid-1",
+      "status": "CANCELLED"
+    }
+  }
+}
+```
+
+---
+

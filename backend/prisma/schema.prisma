@@ -35,6 +35,9 @@ model User {
   reservations            Reservation[]
   reviews                 Review[]
   transactions            Transaction[]
+  borrowRequests          BorrowRequest[]        @relation("UserBorrowRequests")
+  approvedRequests        BorrowRequest[]        @relation("ApprovedRequests")
+  rejectedRequests        BorrowRequest[]        @relation("RejectedRequests")
 
   @@index([email])
   @@index([role])
@@ -94,6 +97,7 @@ model Book {
   reservations       Reservation[]
   reviews            Review[]
   transactions       Transaction[]
+  borrowRequests     BorrowRequest[]
 
   @@index([isbn])
   @@index([title])
@@ -119,6 +123,7 @@ model BookCopy {
   updatedAt       DateTime      @updatedAt
   book            Book          @relation(fields: [bookId], references: [id], onDelete: Cascade)
   transactions    Transaction[]
+  borrowRequests  BorrowRequest[]
 
   @@index([bookId])
   @@index([barcode])
@@ -149,11 +154,50 @@ model Transaction {
   bookCopy        BookCopy          @relation(fields: [bookCopyId], references: [id])
   book            Book              @relation(fields: [bookId], references: [id])
   user            User              @relation(fields: [userId], references: [id])
+  borrowRequest   BorrowRequest?
 
   @@index([userId])
   @@index([bookId])
   @@index([status])
   @@index([dueDate])
+}
+
+model BorrowRequest {
+  id                String              @id @default(uuid())
+  userId            String
+  bookId            String
+  requestDate       DateTime            @default(now())
+  status            BorrowRequestStatus @default(PENDING)
+  notes             String?
+  
+  // Approval fields
+  approvedBy        String?
+  approvedAt        DateTime?
+  bookCopyId        String?
+  dueDate           DateTime?
+  
+  // Rejection fields
+  rejectedBy        String?
+  rejectedAt        DateTime?
+  rejectionReason   String?
+  
+  // Fulfillment
+  transactionId     String?             @unique
+  
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  
+  user              User                @relation("UserBorrowRequests", fields: [userId], references: [id], onDelete: Cascade)
+  book              Book                @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  bookCopy          BookCopy?           @relation(fields: [bookCopyId], references: [id])
+  approver          User?               @relation("ApprovedRequests", fields: [approvedBy], references: [id])
+  rejecter          User?               @relation("RejectedRequests", fields: [rejectedBy], references: [id])
+  transaction       Transaction?        @relation(fields: [transactionId], references: [id])
+  
+  @@index([userId])
+  @@index([bookId])
+  @@index([status])
+  @@index([requestDate])
 }
 
 model Reservation {
@@ -380,6 +424,15 @@ enum TransactionStatus {
   RETURNED
   OVERDUE
   RENEWED
+  CANCELLED
+}
+
+enum BorrowRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  FULFILLED
+  CANCELLED
 }
 
 enum DeliveryStatus {
@@ -428,4 +481,7 @@ enum NotificationCategory {
   DELIVERY_UPDATE
   PAYMENT_CONFIRMATION
   FINE_NOTICE
+  BORROW_REQUEST_CREATED
+  BORROW_REQUEST_APPROVED
+  BORROW_REQUEST_REJECTED
 }

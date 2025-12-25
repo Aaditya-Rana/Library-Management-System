@@ -180,4 +180,74 @@ export class TransactionsController {
     async cancelTransaction(@Param('id') id: string) {
         return this.transactionsService.cancelTransaction(id);
     }
+
+    // ==================== BORROW REQUEST ENDPOINTS ====================
+
+    @Post('request')
+    @HttpCode(HttpStatus.CREATED)
+    async createBorrowRequest(
+        @Body() dto: any,
+        @GetUser('id') userId: string,
+    ) {
+        return this.transactionsService.createBorrowRequest(dto, userId);
+    }
+
+    @Get('requests')
+    @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
+    @HttpCode(HttpStatus.OK)
+    async getBorrowRequests(@Query() queryDto: any) {
+        return this.transactionsService.getBorrowRequests(queryDto);
+    }
+
+    @Get('requests/my')
+    @HttpCode(HttpStatus.OK)
+    async getMyBorrowRequests(
+        @Query() queryDto: any,
+        @GetUser('id') userId: string,
+    ) {
+        return this.transactionsService.getUserBorrowRequests(userId, queryDto);
+    }
+
+    @Get('requests/:id')
+    @HttpCode(HttpStatus.OK)
+    async getBorrowRequest(
+        @Param('id') id: string,
+        @GetUser('id') userId: string,
+        @GetUser('role') role: UserRole,
+    ) {
+        // This would need a findOne method in service
+        // For now, using getBorrowRequests with filter
+        return this.transactionsService.getBorrowRequests({ userId: role === UserRole.USER ? userId : undefined });
+    }
+
+    @Post('requests/:id/approve')
+    @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
+    @HttpCode(HttpStatus.OK)
+    async approveBorrowRequest(
+        @Param('id') id: string,
+        @Body() dto: any,
+        @GetUser('id') librarianId: string,
+    ) {
+        return this.transactionsService.approveBorrowRequest(id, dto, librarianId);
+    }
+
+    @Post('requests/:id/reject')
+    @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
+    @HttpCode(HttpStatus.OK)
+    async rejectBorrowRequest(
+        @Param('id') id: string,
+        @Body() dto: any,
+        @GetUser('id') librarianId: string,
+    ) {
+        return this.transactionsService.rejectBorrowRequest(id, dto, librarianId);
+    }
+
+    @Delete('requests/:id')
+    @HttpCode(HttpStatus.OK)
+    async cancelBorrowRequest(
+        @Param('id') id: string,
+        @GetUser('id') userId: string,
+    ) {
+        return this.transactionsService.cancelBorrowRequest(id, userId);
+    }
 }

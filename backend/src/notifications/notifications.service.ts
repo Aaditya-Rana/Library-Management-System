@@ -287,4 +287,35 @@ export class NotificationsService {
             message: `A fine of ₹${amount} has been assessed for the book "${bookTitle}". Please pay at the library counter.`,
         });
     }
+
+    // Borrow request notifications
+    async sendBorrowRequestNotification(librarianId: string, userName: string, bookTitle: string) {
+        return this.createNotification({
+            userId: librarianId,
+            type: NotificationType.IN_APP,
+            category: NotificationCategory.BORROW_REQUEST_CREATED,
+            title: 'New Borrow Request',
+            message: `${userName} has requested to borrow the book "${bookTitle}". Please review and approve/reject.`,
+        });
+    }
+
+    async sendRequestApprovedNotification(userId: string, bookTitle: string, dueDate: Date) {
+        return this.createNotification({
+            userId,
+            type: NotificationType.IN_APP,
+            category: NotificationCategory.BORROW_REQUEST_APPROVED,
+            title: 'Borrow Request Approved',
+            message: `Your request to borrow "${bookTitle}" has been approved! The book has been issued. Please return by ${dueDate.toDateString()}.`,
+        });
+    }
+
+    async sendRequestRejectedNotification(userId: string, bookTitle: string, rejectionReason: string) {
+        return this.createNotification({
+            userId,
+            type: NotificationType.IN_APP,
+            category: NotificationCategory.BORROW_REQUEST_REJECTED,
+            title: 'Borrow Request Rejected',
+            message: `Your request to borrow "${bookTitle}" has been rejected. Reason: ${rejectionReason}`,
+        });
+    }
 }
