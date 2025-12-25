@@ -4,6 +4,7 @@ import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/services/api';
 import { Button } from '@/components/ui/Button';
+import { BorrowRequestButton } from '@/components/BorrowRequestButton';
 import { useAppSelector } from '@/store/hooks';
 import { BookOpen, Calendar, Star, Info, Layers, Book as BookIcon } from 'lucide-react';
 
@@ -88,9 +89,11 @@ export default function BookDetailsPage({ params }: { params: Promise<{ id: stri
 
                         <div className="mt-6 space-y-3">
                             {isAuthenticated ? (
-                                <Button className="w-full" size="lg" disabled={book.availableCopies === 0}>
-                                    {book.availableCopies > 0 ? 'Borrow Book' : 'Join Waitlist'}
-                                </Button>
+                                <BorrowRequestButton
+                                    bookId={book.id}
+                                    bookTitle={book.title}
+                                    availableCopies={book.availableCopies}
+                                />
                             ) : (
                                 <div className="text-center p-4 bg-gray-50 rounded-lg">
                                     <p className="text-sm text-gray-600 mb-2">Sign in to borrow this book</p>
