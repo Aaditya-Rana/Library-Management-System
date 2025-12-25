@@ -2871,3 +2871,247 @@ curl -X GET "http://localhost:3000/reports/financial/summary?startDate=2024-01-0
 
 ---
 
+
+## 8. Settings Management APIs
+
+### 8.1 Get All Settings
+
+**Endpoint:** `GET /settings`
+
+**Access:** ADMIN, LIBRARIAN
+
+**Query Parameters:**
+- `category` (optional, enum: LIBRARY|FINES|MEMBERSHIP|LOANS|SYSTEM) - Filter by category
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "settings": [
+      {
+        "id": "setting-uuid-1",
+        "key": "library.name",
+        "value": "City Public Library",
+        "category": "LIBRARY",
+        "dataType": "STRING",
+        "description": "Library name",
+        "isEditable": true,
+        "defaultValue": "City Public Library",
+        "createdAt": "2024-12-25T10:00:00Z",
+        "updatedAt": "2024-12-25T10:00:00Z"
+      }
+    ]
+  }
+}
+```
+
+**cURL:**
+```bash
+curl -X GET http://localhost:3000/settings \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN"
+```
+
+**Filter by category:**
+```bash
+curl -X GET "http://localhost:3000/settings?category=LIBRARY" \
+  -H "Authorization: Bearer YOUR_LIBRARIAN_TOKEN"
+```
+
+---
+
+### 8.2 Get Setting by Key
+
+**Endpoint:** `GET /settings/:key`
+
+**Access:** ADMIN, LIBRARIAN
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "setting": {
+      "id": "setting-uuid-1",
+      "key": "library.name",
+      "value": "City Public Library",
+      "category": "LIBRARY",
+      "dataType": "STRING",
+      "description": "Library name",
+      "isEditable": true,
+      "defaultValue": "City Public Library"
+    }
+  }
+}
+```
+
+**Response:** `404 Not Found`
+```json
+{
+  "statusCode": 404,
+  "message": "Setting with key 'invalid.key' not found",
+  "error": "Not Found"
+}
+```
+
+**cURL:**
+```bash
+curl -X GET http://localhost:3000/settings/library.name \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN"
+```
+
+---
+
+### 8.3 Update Setting
+
+**Endpoint:** `PATCH /settings/:key`
+
+**Access:** ADMIN only
+
+**Request Body:**
+```json
+{
+  "value": "New Library Name"
+}
+```
+
+**Examples for different data types:**
+```json
+// STRING
+{ "value": "New Library Name" }
+
+// NUMBER
+{ "value": 10 }
+
+// BOOLEAN
+{ "value": true }
+
+// JSON
+{ "value": { "key": "nested value" } }
+```
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "message": "Setting updated successfully",
+  "data": {
+    "setting": {
+      "id": "setting-uuid-1",
+      "key": "library.name",
+      "value": "New Library Name",
+      "category": "LIBRARY",
+      "dataType": "STRING"
+    }
+  }
+}
+```
+
+**Response:** `400 Bad Request` (Type mismatch)
+```json
+{
+  "statusCode": 400,
+  "message": "Value must be a valid number",
+  "error": "Bad Request"
+}
+```
+
+**Response:** `400 Bad Request` (Not editable)
+```json
+{
+  "statusCode": 400,
+  "message": "Setting 'system.version' is not editable",
+  "error": "Bad Request"
+}
+```
+
+**cURL:**
+```bash
+curl -X PATCH http://localhost:3000/settings/library.name \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"value":"New Library Name"}'
+```
+
+**Update numeric setting:**
+```bash
+curl -X PATCH http://localhost:3000/settings/fines.per_day_amount \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"value":10}'
+```
+
+---
+
+### 8.4 Reset Setting to Default
+
+**Endpoint:** `POST /settings/:key/reset`
+
+**Access:** ADMIN only
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "message": "Setting reset to default successfully",
+  "data": {
+    "setting": {
+      "id": "setting-uuid-1",
+      "key": "library.name",
+      "value": "City Public Library",
+      "category": "LIBRARY",
+      "dataType": "STRING"
+    }
+  }
+}
+```
+
+**cURL:**
+```bash
+curl -X POST http://localhost:3000/settings/library.name/reset \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN"
+```
+
+---
+
+## Default Settings Reference
+
+### Library Settings
+| Key | Default Value | Type | Description |
+|-----|--------------|------|-------------|
+| `library.name` | City Public Library | STRING | Library name |
+| `library.address` | 123 Main Street, City, State 12345 | STRING | Physical address |
+| `library.phone` | +1-234-567-8900 | STRING | Contact phone |
+| `library.email` | info@library.com | STRING | Contact email |
+
+### Loan Settings
+| Key | Default Value | Type | Description |
+|-----|--------------|------|-------------|
+| `loans.default_period_days` | 14 | NUMBER | Default loan period |
+| `loans.max_renewals` | 2 | NUMBER | Maximum renewals |
+| `loans.max_books_per_user` | 5 | NUMBER | Books limit per user |
+
+### Fine Settings
+| Key | Default Value | Type | Description |
+|-----|--------------|------|-------------|
+| `fines.per_day_amount` | 5 | NUMBER | Fine per day |
+| `fines.grace_period_days` | 1 | NUMBER | Grace period days |
+| `fines.max_fine_amount` | 500 | NUMBER | Maximum fine cap |
+
+### Membership Settings
+| Key | Default Value | Type | Description |
+|-----|--------------|------|-------------|
+| `membership.free.book_limit` | 3 | NUMBER | Free tier limit |
+| `membership.premium.book_limit` | 10 | NUMBER | Premium limit |
+| `membership.premium.loan_period_days` | 21 | NUMBER | Premium loan period |
+
+### System Settings
+| Key | Default Value | Type | Description |
+|-----|--------------|------|-------------|
+| `system.timezone` | UTC | STRING | System timezone |
+| `system.date_format` | YYYY-MM-DD | STRING | Date format |
+| `system.currency` | USD | STRING | Currency code |
+| `system.email_notifications` | true | BOOLEAN | Enable emails |
+
+---
+

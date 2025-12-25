@@ -97,7 +97,7 @@ describe('ReportsController', () => {
             const mockResult = { success: true, data: { books: [] } };
             mockReportsService.getLowCirculationBooks.mockResolvedValue(mockResult);
 
-            const result = await controller.getLowCirculationBooks(10);
+            const result = await controller.getLowCirculationBooks('10');
 
             expect(service.getLowCirculationBooks).toHaveBeenCalledWith(10);
             expect(result).toEqual(mockResult);

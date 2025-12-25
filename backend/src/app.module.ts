@@ -10,6 +10,7 @@ import { TransactionsModule } from './transactions/transactions.module';
 import { PaymentsModule } from './payments/payments.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ReportsModule } from './reports/reports.module';
+import { SettingsModule } from './settings/settings.module';
 import { PrismaService } from './common/services/prisma.service';
 
 @Module({
@@ -24,6 +25,7 @@ import { PrismaService } from './common/services/prisma.service';
     PaymentsModule,
     NotificationsModule,
     ReportsModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [
