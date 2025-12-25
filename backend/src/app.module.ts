@@ -9,6 +9,7 @@ import { BooksModule } from './books/books.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { PaymentsModule } from './payments/payments.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { ReportsModule } from './reports/reports.module';
 import { PrismaService } from './common/services/prisma.service';
 
 @Module({
@@ -22,6 +23,7 @@ import { PrismaService } from './common/services/prisma.service';
     TransactionsModule,
     PaymentsModule,
     NotificationsModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [
