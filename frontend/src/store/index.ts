@@ -12,5 +12,9 @@ export const store = configureStore({
     devTools: process.env.NODE_ENV !== 'production',
 });
 
+// Inject store into api to avoid circular dependency
+import { injectStore } from '../services/api';
+injectStore(store);
+
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

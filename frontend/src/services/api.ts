@@ -1,6 +1,11 @@
 import axios from 'axios';
-import { store } from '../store';
 import { logout } from '../features/auth/authSlice';
+
+let store: any;
+
+export const injectStore = (_store: any) => {
+    store = _store;
+};
 
 // Create Axios custom instance
 const api = axios.create({
@@ -13,8 +18,13 @@ const api = axios.create({
 // Request interceptor to add token
 api.interceptors.request.use(
     (config) => {
-        const state = store.getState();
-        const token = state.auth.token || localStorage.getItem('token'); // Fallback to localStorage
+        let token = localStorage.getItem('token'); // Default to localStorage
+        if (store) {
+            const state = store.getState();
+            if (state.auth.token) {
+                token = state.auth.token;
+            }
+        }
         if (token) {
             config.headers['Authorization'] = `Bearer ${token}`;
         }
@@ -34,7 +44,9 @@ api.interceptors.response.use(
             const isLoginRequest = error.config && error.config.url && error.config.url.includes('/auth/login');
 
             if (!isLoginRequest) {
-                store.dispatch(logout());
+                if (store) {
+                    store.dispatch(logout());
+                }
                 if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
                     window.location.href = '/login';
                 }
