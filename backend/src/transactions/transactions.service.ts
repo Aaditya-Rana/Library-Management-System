@@ -740,70 +740,82 @@ export class TransactionsService {
     }
 
     async getBorrowRequests(queryDto: any) {
-        const { page = 1, limit = 20, status, userId, bookId, sortBy = 'requestDate', sortOrder = 'desc' } = queryDto;
+        try {
+            const { page = 1, limit = 20, status, userId, bookId, sortBy = 'requestDate', sortOrder = 'desc' } = queryDto;
 
-        const skip = (page - 1) * limit;
+            const skip = (page - 1) * limit;
 
-        const where: any = {};
-        if (status) where.status = status;
-        if (userId) where.userId = userId;
-        if (bookId) where.bookId = bookId;
+            const where: any = {};
+            if (status) where.status = status;
+            if (userId) where.userId = userId;
+            if (bookId) where.bookId = bookId;
 
-        const [borrowRequests, total] = await Promise.all([
-            this.prisma.borrowRequest.findMany({
-                where,
-                include: {
-                    user: {
-                        select: {
-                            id: true,
-                            email: true,
-                            firstName: true,
-                            lastName: true,
+            console.log('[getBorrowRequests] Query params:', { page, limit, status, userId, bookId, sortBy, sortOrder });
+            console.log('[getBorrowRequests] Where clause:', where);
+
+            const [borrowRequests, total] = await Promise.all([
+                this.prisma.borrowRequest.findMany({
+                    where,
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                email: true,
+                                firstName: true,
+                                lastName: true,
+                            },
+                        },
+                        book: {
+                            select: {
+                                id: true,
+                                title: true,
+                                author: true,
+                                isbn: true,
+                                coverImageUrl: true,
+                            },
+                        },
+                        approver: {
+                            select: {
+                                id: true,
+                                firstName: true,
+                                lastName: true,
+                            },
+                        },
+                        rejecter: {
+                            select: {
+                                id: true,
+                                firstName: true,
+                                lastName: true,
+                            },
                         },
                     },
-                    book: {
-                        select: {
-                            id: true,
-                            title: true,
-                            author: true,
-                            isbn: true,
-                            coverImageUrl: true,
-                        },
-                    },
-                    approver: {
-                        select: {
-                            id: true,
-                            firstName: true,
-                            lastName: true,
-                        },
-                    },
-                    rejecter: {
-                        select: {
-                            id: true,
-                            firstName: true,
-                            lastName: true,
-                        },
+                    skip,
+                    take: limit,
+                    orderBy: { [sortBy]: sortOrder },
+                }),
+                this.prisma.borrowRequest.count({ where }),
+            ]);
+
+            console.log('[getBorrowRequests] Found', total, 'requests');
+
+            return {
+                success: true,
+                data: {
+                    borrowRequests,
+                    pagination: {
+                        page,
+                        limit,
+                        total,
+                        totalPages: Math.ceil(total / limit),
                     },
                 },
-                skip,
-                take: limit,
-                orderBy: { [sortBy]: sortOrder },
-            }),
-            this.prisma.borrowRequest.count({ where }),
-        ]);
-
-        return {
-            success: true,
-            data: {
-                borrowRequests,
-                pagination: {
-                    page,
-                    limit,
-                    total,
-                    totalPages: Math.ceil(total / limit),
-                },
-            },
-        };
+            };
+        } catch (error) {
+            console.error('[getBorrowRequests] ERROR:', error);
+            console.error('[getBorrowRequests] Error stack:', error.stack);
+            console.error('[getBorrowRequests] Error message:', error.message);
+            throw error; // Re-throw to let NestJS handle it
+        }
     }
 
     async getUserBorrowRequests(userId: string, queryDto: any) {
