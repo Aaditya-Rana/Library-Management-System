@@ -57,6 +57,7 @@ describe('NotificationsService', () => {
         it('should create a notification successfully', async () => {
             const createDto = {
                 userId: 'user-1',
+                type: 'IN_APP' as const,
                 category: NotificationCategory.BOOK_ISSUED,
                 title: 'Book Issued',
                 message: 'Your book has been issued',
