@@ -5,6 +5,7 @@ import {
     ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../common/services/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { RecordPaymentDto } from './dto/record-payment.dto';
 import { RefundPaymentDto } from './dto/refund-payment.dto';
 import { QueryPaymentsDto } from './dto/query-payments.dto';
@@ -12,7 +13,10 @@ import { PaymentStatus, UserRole, PaymentMethod } from '@prisma/client';
 
 @Injectable()
 export class PaymentsService {
-    constructor(private readonly prisma: PrismaService) { }
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly notificationsService: NotificationsService,
+    ) { }
 
     async recordPayment(dto: RecordPaymentDto, _librarianId: string) {
         // Validate transaction if provided

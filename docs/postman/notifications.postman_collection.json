@@ -1,0 +1,290 @@
+{
+    "info": {
+        "_postman_id": "notifications-collection-id",
+        "name": "Library Management - Notifications API",
+        "description": "Collection for testing Notifications API endpoints of the Library Management System",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+            }
+        ]
+    },
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:3000",
+            "type": "string"
+        },
+        {
+            "key": "accessToken",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "notificationId",
+            "value": "",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "Get User Notifications",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "pm.test(\"Response has success property\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData).to.have.property('success');",
+                            "    pm.expect(jsonData.success).to.be.true;",
+                            "});",
+                            "",
+                            "pm.test(\"Response has notifications array\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.data).to.have.property('notifications');",
+                            "    pm.expect(jsonData.data.notifications).to.be.an('array');",
+                            "});",
+                            "",
+                            "pm.test(\"Response has pagination\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.data).to.have.property('pagination');",
+                            "});",
+                            "",
+                            "// Save first notification ID if available",
+                            "var jsonData = pm.response.json();",
+                            "if (jsonData.data.notifications.length > 0) {",
+                            "    pm.collectionVariables.set(\"notificationId\", jsonData.data.notifications[0].id);",
+                            "}"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/notifications?page=1&limit=20&read=false",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "notifications"
+                    ],
+                    "query": [
+                        {
+                            "key": "page",
+                            "value": "1",
+                            "description": "Page number"
+                        },
+                        {
+                            "key": "limit",
+                            "value": "20",
+                            "description": "Items per page"
+                        },
+                        {
+                            "key": "read",
+                            "value": "false",
+                            "description": "Filter by read status",
+                            "disabled": true
+                        },
+                        {
+                            "key": "category",
+                            "value": "BOOK_ISSUED",
+                            "description": "Filter by notification category",
+                            "disabled": true
+                        }
+                    ]
+                },
+                "description": "Retrieves paginated list of user's notifications with optional filters"
+            },
+            "response": []
+        },
+        {
+            "name": "Get Unread Notification Count",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "pm.test(\"Response has success property\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData).to.have.property('success');",
+                            "    pm.expect(jsonData.success).to.be.true;",
+                            "});",
+                            "",
+                            "pm.test(\"Response has unreadCount\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.data).to.have.property('unreadCount');",
+                            "    pm.expect(jsonData.data.unreadCount).to.be.a('number');",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/notifications/unread-count",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "notifications",
+                        "unread-count"
+                    ]
+                },
+                "description": "Returns the count of unread notifications for the authenticated user"
+            },
+            "response": []
+        },
+        {
+            "name": "Mark Notification as Read",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "pm.test(\"Response has success property\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData).to.have.property('success');",
+                            "    pm.expect(jsonData.success).to.be.true;",
+                            "});",
+                            "",
+                            "pm.test(\"Notification is marked as read\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.data.notification.read).to.be.true;",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/notifications/{{notificationId}}/read",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "notifications",
+                        "{{notificationId}}",
+                        "read"
+                    ]
+                },
+                "description": "Marks a specific notification as read"
+            },
+            "response": []
+        },
+        {
+            "name": "Mark All Notifications as Read",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "pm.test(\"Response has success property\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData).to.have.property('success');",
+                            "    pm.expect(jsonData.success).to.be.true;",
+                            "});",
+                            "",
+                            "pm.test(\"Response has count\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.data).to.have.property('count');",
+                            "    pm.expect(jsonData.data.count).to.be.a('number');",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/notifications/read-all",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "notifications",
+                        "read-all"
+                    ]
+                },
+                "description": "Marks all user's notifications as read"
+            },
+            "response": []
+        },
+        {
+            "name": "Delete Notification",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "pm.test(\"Response has success property\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData).to.have.property('success');",
+                            "    pm.expect(jsonData.success).to.be.true;",
+                            "});",
+                            "",
+                            "pm.test(\"Response has success message\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.message).to.include('deleted');",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/notifications/{{notificationId}}",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "notifications",
+                        "{{notificationId}}"
+                    ]
+                },
+                "description": "Deletes a specific notification"
+            },
+            "response": []
+        }
+    ]
+}

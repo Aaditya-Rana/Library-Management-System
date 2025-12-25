@@ -1875,9 +1875,201 @@ curl -X GET https://api.yourdomain.com/v1/payments/transaction/trans-uuid-123/br
 
 ---
 
-## 📊 8. Reports APIs
+## � 8. Notifications APIs
 
-### 8.1 Dashboard Statistics
+### 8.1 Get User Notifications
+
+**Endpoint:** `GET /notifications`
+
+**Access:** USER (own notifications), LIBRARIAN/ADMIN (any user)
+
+**Use Case:** Retrieve paginated list of user's notifications with optional filtering
+
+**Query Parameters:**
+- `page` (number, optional, default: 1) - Page number
+- `limit` (number, optional, default: 20) - Items per page (max: 100)
+- `read` (boolean, optional) - Filter by read status
+- `category` (string, optional) - Filter by notification category
+
+**Notification Categories:**
+- `BOOK_ISSUED` - Book has been issued to user
+- `BOOK_RETURNED` - Book has been returned
+- `BOOK_DUE_REMINDER` - Book due soon reminder
+- `BOOK_OVERDUE` - Book is now overdue
+- `PAYMENT_CONFIRMATION` - Payment received
+- `FINE_NOTICE` - Fine notice or reminder
+- `RESERVATION_AVAILABLE` - Reserved book is now available
+- `ACCOUNT_APPROVED` - User account approved
+- `ACCOUNT_SUSPENDED` - User account suspended
+- `DELIVERY_UPDATE` - Delivery status update
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "notifications": [
+      {
+        "id": "notif-uuid-1",
+        "userId": "user-uuid-123",
+        "type": "IN_APP",
+        "category": "BOOK_ISSUED",
+        "title": "Book Issued",
+        "message": "The book 'The Great Gatsby' has been issued to you. Due date: 2025-01-10.",
+        "read": false,
+        "sentAt": "2025-12-25T10:00:00Z",
+        "readAt": null,
+        "createdAt": "2025-12-25T10:00:00Z"
+      },
+      {
+        "id": "notif-uuid-2",
+        "userId": "user-uuid-123",
+        "type": "IN_APP",
+        "category": "PAYMENT_CONFIRMATION",
+        "title": "Payment Received",
+        "message": "Your payment of ₹150.00 has been successfully recorded.",
+        "read": true,
+        "sentAt": "2025-12-24T14:30:00Z",
+        "readAt": "2025-12-24T15:00:00Z",
+        "createdAt": "2025-12-24T14:30:00Z"
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 20,
+      "total": 15,
+      "totalPages": 1
+    }
+  }
+}
+```
+
+**cURL Example:**
+```bash
+# Get all unread notifications
+curl -X GET "https://api.yourdomain.com/v1/notifications?read=false&page=1&limit=10" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# Get notifications for a specific category
+curl -X GET "https://api.yourdomain.com/v1/notifications?category=BOOK_ISSUED" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+---
+
+### 8.2 Get Unread Notification Count
+
+**Endpoint:** `GET /notifications/unread-count`
+
+**Access:** USER
+
+**Use Case:** Get the count of unread notifications for the authenticated user (useful for badge counters in UI)
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "unreadCount": 5
+  }
+}
+```
+
+**cURL Example:**
+```bash
+curl -X GET https://api.yourdomain.com/v1/notifications/unread-count \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+---
+
+### 8.3 Mark Notification as Read
+
+**Endpoint:** `PATCH /notifications/:id/read`
+
+**Access:** USER (own notifications), LIBRARIAN/ADMIN (any)
+
+**Use Case:** Mark a specific notification as read
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "message": "Notification marked as read",
+  "data": {
+    "notification": {
+      "id": "notif-uuid-1",
+      "userId": "user-uuid-123",
+      "title": "Book Issued",
+      "read": true,
+      "readAt": "2025-12-25T15:30:00Z"
+    }
+  }
+}
+```
+
+**cURL Example:**
+```bash
+curl -X PATCH https://api.yourdomain.com/v1/notifications/notif-uuid-1/read \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+---
+
+### 8.4 Mark All Notifications as Read
+
+**Endpoint:** `PATCH /notifications/read-all`
+
+**Access:** USER
+
+**Use Case:** Mark all user's notifications as read at once
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "message": "All notifications marked as read",
+  "data": {
+    "count": 5
+  }
+}
+```
+
+**cURL Example:**
+```bash
+curl -X PATCH https://api.yourdomain.com/v1/notifications/read-all \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+---
+
+### 8.5 Delete Notification
+
+**Endpoint:** `DELETE /notifications/:id`
+
+**Access:** USER (own notifications), ADMIN (any)
+
+**Use Case:** Delete a specific notification permanently
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "message": "Notification deleted successfully"
+}
+```
+
+**cURL Example:**
+```bash
+curl -X DELETE https://api.yourdomain.com/v1/notifications/notif-uuid-1 \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+---
+
+## 📊 9. Reports APIs
+
+### 9.1 Dashboard Statistics
 
 **Endpoint:** `GET /reports/dashboard`
 

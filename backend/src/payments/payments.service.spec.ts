@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PaymentsService } from './payments.service';
 import { PrismaService } from '../common/services/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PaymentStatus, PaymentMethod, UserRole } from '@prisma/client';
 
@@ -19,7 +20,14 @@ describe('PaymentsService', () => {
             findMany: jest.fn(),
             count: jest.fn(),
             update: jest.fn(),
+            updateMany: jest.fn(),
+            delete: jest.fn(),
         },
+    };
+
+    const mockNotificationsService = {
+        sendPaymentConfirmationNotification: jest.fn(),
+        sendFineNoticeNotification: jest.fn(),
     };
 
     beforeEach(async () => {
@@ -29,6 +37,10 @@ describe('PaymentsService', () => {
                 {
                     provide: PrismaService,
                     useValue: mockPrismaService,
+                },
+                {
+                    provide: NotificationsService,
+                    useValue: mockNotificationsService,
                 },
             ],
         }).compile();
