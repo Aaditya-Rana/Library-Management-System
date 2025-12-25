@@ -3,6 +3,8 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/common/services/prisma.service';
+import { EmailService } from '../src/common/services/email.service';
+import { MockEmailService } from './mocks/mock-email.service';
 
 describe('Borrow Requests E2E Tests', () => {
     let app: INestApplication;
@@ -22,7 +24,10 @@ describe('Borrow Requests E2E Tests', () => {
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
             imports: [AppModule],
-        }).compile();
+        })
+            .overrideProvider(EmailService)
+            .useClass(MockEmailService)
+            .compile();
 
         app = moduleFixture.createNestApplication();
         app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
@@ -86,7 +91,7 @@ describe('Borrow Requests E2E Tests', () => {
                 email: `admin${timestamp}@borrowtest.com`,
                 password: 'Test@1234',
             });
-        adminToken = adminLogin.body.data.access_token;
+        adminToken = adminLogin.body.data.tokens.accessToken;
 
         const librarianLogin = await request(app.getHttpServer())
             .post('/auth/login')
@@ -94,7 +99,7 @@ describe('Borrow Requests E2E Tests', () => {
                 email: `librarian${timestamp}@borrowtest.com`,
                 password: 'Test@1234',
             });
-        librarianToken = librarianLogin.body.data.access_token;
+        librarianToken = librarianLogin.body.data.tokens.accessToken;
 
         const userLogin = await request(app.getHttpServer())
             .post('/auth/login')
@@ -102,7 +107,24 @@ describe('Borrow Requests E2E Tests', () => {
                 email: `user${timestamp}@borrowtest.com`,
                 password: 'Test@1234',
             });
-        userToken = userLogin.body.data.access_token;
+        userToken = userLogin.body.data.tokens.accessToken;
+
+        // Verify all users' emails to activate them
+        const users = await prisma.user.findMany({
+            where: {
+                id: { in: [adminId, librarianId, userId] },
+            },
+        });
+
+        for (const user of users) {
+            await prisma.user.update({
+                where: { id: user.id },
+                data: { emailVerified: true },
+            });
+        }
+
+        console.log('User tokens:', { adminToken, librarianToken, userToken });
+        console.log('User IDs:', { adminId, librarianId, userId });
 
         // Create test book
         const book = await prisma.book.create({
