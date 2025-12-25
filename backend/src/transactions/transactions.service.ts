@@ -662,4 +662,316 @@ export class TransactionsService {
             message: 'Transaction cancelled successfully',
         };
     }
+
+    // ==================== BORROW REQUEST METHODS ====================
+
+    async createBorrowRequest(dto: any, userId: string) {
+        const { bookId, notes } = dto;
+
+        // Validate book exists and is available
+        const book = await this.prisma.book.findUnique({
+            where: { id: bookId },
+        });
+
+        if (!book) {
+            throw new NotFoundException('Book not found');
+        }
+
+        if (!book.isActive) {
+            throw new BadRequestException('Book is not available for borrowing');
+        }
+
+        if (book.availableCopies < 1) {
+            throw new BadRequestException('No copies available for this book');
+        }
+
+        // Check if user already has a pending request for this book
+        const existingRequest = await this.prisma.borrowRequest.findFirst({
+            where: {
+                userId,
+                bookId,
+                status: { in: ['PENDING', 'APPROVED'] },
+            },
+        });
+
+        if (existingRequest) {
+            throw new BadRequestException('You already have a pending request for this book');
+        }
+
+        // Create borrow request
+        const borrowRequest = await this.prisma.borrowRequest.create({
+            data: {
+                userId,
+                bookId,
+                notes,
+                status: 'PENDING',
+            },
+            include: {
+                book: true,
+                user: true,
+            },
+        });
+
+        // Send notification to librarians
+        try {
+            const librarians = await this.prisma.user.findMany({
+                where: {
+                    role: { in: ['LIBRARIAN', 'ADMIN'] },
+                    status: 'ACTIVE',
+                },
+            });
+
+            for (const librarian of librarians) {
+                await this.notificationsService.sendBorrowRequestNotification(
+                    librarian.id,
+                    borrowRequest.user.firstName + ' ' + borrowRequest.user.lastName,
+                    borrowRequest.book.title,
+                );
+            }
+        } catch (error) {
+            console.error('Failed to send borrow request notification:', error);
+        }
+
+        return {
+            success: true,
+            message: 'Borrow request created successfully',
+            data: { borrowRequest },
+        };
+    }
+
+    async getBorrowRequests(queryDto: any) {
+        const { page = 1, limit = 20, status, userId, bookId, sortBy = 'requestDate', sortOrder = 'desc' } = queryDto;
+
+        const skip = (page - 1) * limit;
+
+        const where: any = {};
+        if (status) where.status = status;
+        if (userId) where.userId = userId;
+        if (bookId) where.bookId = bookId;
+
+        const [borrowRequests, total] = await Promise.all([
+            this.prisma.borrowRequest.findMany({
+                where,
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            email: true,
+                            firstName: true,
+                            lastName: true,
+                        },
+                    },
+                    book: {
+                        select: {
+                            id: true,
+                            title: true,
+                            author: true,
+                            isbn: true,
+                            coverImageUrl: true,
+                        },
+                    },
+                    approver: {
+                        select: {
+                            id: true,
+                            firstName: true,
+                            lastName: true,
+                        },
+                    },
+                    rejecter: {
+                        select: {
+                            id: true,
+                            firstName: true,
+                            lastName: true,
+                        },
+                    },
+                },
+                skip,
+                take: limit,
+                orderBy: { [sortBy]: sortOrder },
+            }),
+            this.prisma.borrowRequest.count({ where }),
+        ]);
+
+        return {
+            success: true,
+            data: {
+                borrowRequests,
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    totalPages: Math.ceil(total / limit),
+                },
+            },
+        };
+    }
+
+    async getUserBorrowRequests(userId: string, queryDto: any) {
+        return this.getBorrowRequests({ ...queryDto, userId });
+    }
+
+    async approveBorrowRequest(requestId: string, dto: any, librarianId: string) {
+        const { bookCopyId, dueDate, notes } = dto;
+
+        // Find the borrow request
+        const borrowRequest = await this.prisma.borrowRequest.findUnique({
+            where: { id: requestId },
+            include: {
+                user: true,
+                book: true,
+            },
+        });
+
+        if (!borrowRequest) {
+            throw new NotFoundException('Borrow request not found');
+        }
+
+        if (borrowRequest.status !== 'PENDING') {
+            throw new BadRequestException('Only pending requests can be approved');
+        }
+
+        // Validate book copy
+        const bookCopy = await this.prisma.bookCopy.findUnique({
+            where: { id: bookCopyId },
+        });
+
+        if (!bookCopy || bookCopy.bookId !== borrowRequest.bookId) {
+            throw new BadRequestException('Invalid book copy');
+        }
+
+        if (bookCopy.status !== 'AVAILABLE') {
+            throw new BadRequestException('Book copy is not available');
+        }
+
+        // Calculate due date if not provided
+        const calculatedDueDate = dueDate
+            ? new Date(dueDate)
+            : new Date(Date.now() + borrowRequest.book.loanPeriodDays * 24 * 60 * 60 * 1000);
+
+        // Issue the book (create transaction)
+        const transaction = await this.issueBook(
+            {
+                userId: borrowRequest.userId,
+                bookId: borrowRequest.bookId,
+                bookCopyId,
+                dueDate: calculatedDueDate,
+                notes: notes || borrowRequest.notes,
+            },
+            librarianId,
+        );
+
+        // Update borrow request status
+        const updatedRequest = await this.prisma.borrowRequest.update({
+            where: { id: requestId },
+            data: {
+                status: 'FULFILLED',
+                approvedBy: librarianId,
+                approvedAt: new Date(),
+                bookCopyId,
+                dueDate: calculatedDueDate,
+                transactionId: transaction.id,
+            },
+            include: {
+                user: true,
+                book: true,
+            },
+        });
+
+        // Send approval notification to user
+        try {
+            await this.notificationsService.sendRequestApprovedNotification(
+                borrowRequest.userId,
+                borrowRequest.book.title,
+                calculatedDueDate,
+            );
+        } catch (error) {
+            console.error('Failed to send approval notification:', error);
+        }
+
+        return {
+            success: true,
+            message: 'Borrow request approved and book issued',
+            data: { borrowRequest: updatedRequest, transaction },
+        };
+    }
+
+    async rejectBorrowRequest(requestId: string, dto: any, librarianId: string) {
+        const { rejectionReason } = dto;
+
+        const borrowRequest = await this.prisma.borrowRequest.findUnique({
+            where: { id: requestId },
+            include: {
+                user: true,
+                book: true,
+            },
+        });
+
+        if (!borrowRequest) {
+            throw new NotFoundException('Borrow request not found');
+        }
+
+        if (borrowRequest.status !== 'PENDING') {
+            throw new BadRequestException('Only pending requests can be rejected');
+        }
+
+        const updatedRequest = await this.prisma.borrowRequest.update({
+            where: { id: requestId },
+            data: {
+                status: 'REJECTED',
+                rejectedBy: librarianId,
+                rejectedAt: new Date(),
+                rejectionReason,
+            },
+            include: {
+                user: true,
+                book: true,
+            },
+        });
+
+        // Send rejection notification to user
+        try {
+            await this.notificationsService.sendRequestRejectedNotification(
+                borrowRequest.userId,
+                borrowRequest.book.title,
+                rejectionReason,
+            );
+        } catch (error) {
+            console.error('Failed to send rejection notification:', error);
+        }
+
+        return {
+            success: true,
+            message: 'Borrow request rejected',
+            data: { borrowRequest: updatedRequest },
+        };
+    }
+
+    async cancelBorrowRequest(requestId: string, userId: string) {
+        const borrowRequest = await this.prisma.borrowRequest.findUnique({
+            where: { id: requestId },
+        });
+
+        if (!borrowRequest) {
+            throw new NotFoundException('Borrow request not found');
+        }
+
+        if (borrowRequest.userId !== userId) {
+            throw new ForbiddenException('You can only cancel your own requests');
+        }
+
+        if (borrowRequest.status !== 'PENDING') {
+            throw new BadRequestException('Only pending requests can be cancelled');
+        }
+
+        const updatedRequest = await this.prisma.borrowRequest.update({
+            where: { id: requestId },
+            data: { status: 'CANCELLED' },
+        });
+
+        return {
+            success: true,
+            message: 'Borrow request cancelled',
+            data: { borrowRequest: updatedRequest },
+        };
+    }
 }
