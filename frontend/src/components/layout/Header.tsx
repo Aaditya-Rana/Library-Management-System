@@ -8,6 +8,7 @@ import { logout } from '@/features/auth/authSlice';
 import { Button } from '@/components/ui/Button';
 import { BookOpen, Menu, X, User as UserIcon, LogOut, LayoutDashboard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { NotificationBell } from '@/components/NotificationBell';
 
 export default function Header() {
     const { user, isAuthenticated } = useAppSelector((state) => state.auth);
@@ -72,6 +73,7 @@ export default function Header() {
                                 <div className="flex items-center space-x-2 text-sm font-medium text-gray-700">
                                     <span>Hi, {user.firstName}</span>
                                 </div>
+                                <NotificationBell />
                                 <Button variant="outline" size="sm" onClick={handleLogout}>
                                     <LogOut className="w-4 h-4 mr-2" />
                                     Sign out

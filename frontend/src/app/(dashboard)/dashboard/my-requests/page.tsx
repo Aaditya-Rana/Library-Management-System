@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import Link from 'next/link';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchMyBorrowRequests, cancelBorrowRequest } from '@/features/borrowRequests/borrowRequestsSlice';
 import { Button } from '@/components/ui/Button';
@@ -139,9 +140,9 @@ export default function MyRequestsPage() {
                         <BookOpen className="w-12 h-12 mx-auto text-gray-300 mb-4" />
                         <p className="text-lg font-medium text-gray-900">No requests yet</p>
                         <p className="mb-6">You haven&apos;t requested any books.</p>
-                        <a href="/books">
+                        <Link href="/books">
                             <Button>Browse Library</Button>
-                        </a>
+                        </Link>
                     </div>
                 )}
             </div>

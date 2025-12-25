@@ -28,6 +28,7 @@ export default function Sidebar() {
         { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
         { name: 'My Books', href: '/dashboard/books', icon: BookOpen },
         { name: 'My Requests', href: '/dashboard/my-requests', icon: ClipboardList },
+        { name: 'Payments', href: '/dashboard/payments', icon: DollarSign },
         { name: 'History', href: '/dashboard/history', icon: History },
         { name: 'Profile', href: '/dashboard/profile', icon: Settings },
     ];
