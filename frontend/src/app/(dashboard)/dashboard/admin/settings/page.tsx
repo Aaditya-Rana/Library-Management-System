@@ -39,9 +39,12 @@ export default function SettingsPage() {
         setEditValue('');
     };
 
+    // Ensure settings is always an array
+    const settingsArray = Array.isArray(settings) ? settings : [];
+
     const filteredSettings = categoryFilter === 'ALL'
-        ? settings
-        : settings.filter(s => s.category === categoryFilter);
+        ? settingsArray
+        : settingsArray.filter(s => s.category === categoryFilter);
 
     const categories = ['ALL', 'LIBRARY', 'FINES', 'MEMBERSHIP', 'LOANS', 'SYSTEM'];
 
@@ -74,8 +77,8 @@ export default function SettingsPage() {
                                 key={category}
                                 onClick={() => setCategoryFilter(category)}
                                 className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${categoryFilter === category
-                                        ? 'border-primary-500 text-primary-600'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                    ? 'border-primary-500 text-primary-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                     }`}
                             >
                                 {category}
