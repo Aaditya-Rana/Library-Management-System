@@ -3,6 +3,8 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/common/services/prisma.service';
+import { EmailService } from '../src/common/services/email.service';
+import { MockEmailService } from './mocks/mock-email.service';
 import { PaymentMethod, PaymentStatus, UserRole, UserStatus, MembershipType, BookStatus, BookCondition, TransactionStatus } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
@@ -19,7 +21,10 @@ describe('Payments (e2e)', () => {
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
             imports: [AppModule],
-        }).compile();
+        })
+            .overrideProvider(EmailService)
+            .useClass(MockEmailService)
+            .compile();
 
         app = moduleFixture.createNestApplication();
         app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
