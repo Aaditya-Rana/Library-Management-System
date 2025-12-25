@@ -281,11 +281,12 @@ export class ReportsService {
                 case GroupByPeriod.DAY:
                     key = date.toISOString().split('T')[0];
                     break;
-                case GroupByPeriod.WEEK:
+                case GroupByPeriod.WEEK: {
                     const weekStart = new Date(date);
                     weekStart.setDate(date.getDate() - date.getDay());
                     key = weekStart.toISOString().split('T')[0];
                     break;
+                }
                 case GroupByPeriod.MONTH:
                     key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
                     break;

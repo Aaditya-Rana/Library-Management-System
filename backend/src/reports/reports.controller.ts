@@ -42,8 +42,9 @@ export class ReportsController {
     @Get('books/low-circulation')
     @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
     @HttpCode(HttpStatus.OK)
-    async getLowCirculationBooks(@Query('limit') limit?: number) {
-        return this.reportsService.getLowCirculationBooks(limit);
+    async getLowCirculationBooks(@Query('limit') limit?: string) {
+        const parsedLimit = limit ? parseInt(limit, 10) : 10;
+        return this.reportsService.getLowCirculationBooks(parsedLimit);
     }
 
     @Get('books/categories')
