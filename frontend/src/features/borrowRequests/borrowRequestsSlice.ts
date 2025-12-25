@@ -23,7 +23,7 @@ export const createBorrowRequest = createAsyncThunk(
     'borrowRequests/create',
     async (data: { bookId: string; notes?: string }, { rejectWithValue }) => {
         try {
-            const response = await api.post('/transactions/requests', data);
+            const response = await api.post('/transactions/request', data);
             return response.data;
         } catch (error: any) {
             return rejectWithValue(error.response?.data?.message || 'Failed to create borrow request');
