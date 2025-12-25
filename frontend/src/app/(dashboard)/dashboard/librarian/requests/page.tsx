@@ -43,9 +43,9 @@ export default function BorrowRequestsManagementPage() {
     };
 
     const filteredRequests = borrowRequests.filter(request =>
-        request.book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        request.user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        request.user.lastName.toLowerCase().includes(searchTerm.toLowerCase())
+        request.book?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        request.user?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        request.user?.lastName?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const statusTabs = ['PENDING', 'APPROVED', 'REJECTED', 'FULFILLED'];
@@ -83,8 +83,8 @@ export default function BorrowRequestsManagementPage() {
                                 key={status}
                                 onClick={() => setStatusFilter(status)}
                                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${statusFilter === status
-                                        ? 'border-primary-500 text-primary-600'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                    ? 'border-primary-500 text-primary-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                     }`}
                             >
                                 {status}
@@ -128,9 +128,9 @@ export default function BorrowRequestsManagementPage() {
                                             </td>
                                             <td className="px-6 py-4">
                                                 <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${request.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                                                        request.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
-                                                            request.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
-                                                                'bg-blue-100 text-blue-800'
+                                                    request.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
+                                                        request.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
+                                                            'bg-blue-100 text-blue-800'
                                                     }`}>
                                                     {request.status}
                                                 </span>
