@@ -22,7 +22,10 @@ export default function MyBooksPage() {
         }
     }, [dispatch, user]);
 
-    const currentBooks = transactions.filter(t => t.status !== 'RETURNED');
+    // Include active books AND returned books with unpaid fines
+    const currentBooks = transactions.filter(t =>
+        t.status !== 'RETURNED' || (t.fineAmount && t.fineAmount > 0)
+    );
 
     const handlePayFine = async (data: { amount: number; paymentMethod: string; transactionIdRef?: string }) => {
         if (!selectedTransaction) return;
