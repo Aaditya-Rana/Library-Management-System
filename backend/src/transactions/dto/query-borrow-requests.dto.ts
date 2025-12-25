@@ -1,6 +1,6 @@
 import { IsOptional, IsString, IsEnum, IsInt, Min } from 'class-validator';
 import { Type } from 'class-transformer';
-import type { BorrowRequestStatus } from '@prisma/client';
+import { BorrowRequestStatus } from '@prisma/client';
 
 export class QueryBorrowRequestsDto {
     @IsOptional()

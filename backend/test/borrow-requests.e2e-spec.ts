@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/common/services/prisma.service';
 
@@ -230,7 +230,9 @@ describe('Borrow Requests E2E Tests', () => {
             const requests = await prisma.borrowRequest.findMany({
                 where: { userId, status: 'PENDING' },
             });
-            requestId = requests[0]?.id;
+            if (requests.length > 0) {
+                requestId = requests[0].id;
+            }
         });
 
         it('should allow librarian to approve request', async () => {
@@ -267,8 +269,8 @@ describe('Borrow Requests E2E Tests', () => {
             // Create a new request to reject
             const req = await prisma.borrowRequest.create({
                 data: {
-                    userId,
-                    bookId,
+                    user: { connect: { id: userId } },
+                    book: { connect: { id: bookId } },
                     status: 'PENDING',
                 },
             });
@@ -295,8 +297,8 @@ describe('Borrow Requests E2E Tests', () => {
         beforeAll(async () => {
             const req = await prisma.borrowRequest.create({
                 data: {
-                    userId,
-                    bookId,
+                    user: { connect: { id: userId } },
+                    book: { connect: { id: bookId } },
                     status: 'PENDING',
                 },
             });
