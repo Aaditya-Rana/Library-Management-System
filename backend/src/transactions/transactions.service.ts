@@ -741,7 +741,10 @@ export class TransactionsService {
 
     async getBorrowRequests(queryDto: any) {
         try {
-            const { page = 1, limit = 20, status, userId, bookId, sortBy = 'requestDate', sortOrder = 'desc' } = queryDto;
+            // Parse query params - they come as strings from HTTP
+            const page = parseInt(queryDto.page) || 1;
+            const limit = parseInt(queryDto.limit) || 20;
+            const { status, userId, bookId, sortBy = 'requestDate', sortOrder = 'desc' } = queryDto;
 
             const skip = (page - 1) * limit;
 
