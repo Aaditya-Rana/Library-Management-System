@@ -1,0 +1,381 @@
+{
+    "info": {
+        "_postman_id": "payments-api-collection",
+        "name": "Library Management - Payments API",
+        "description": "Complete API collection for Payments Module - Offline payment recording, refunds, payment history, and transaction payment tracking",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+            }
+        ]
+    },
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:3000",
+            "type": "string"
+        },
+        {
+            "key": "accessToken",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "paymentId",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "transactionId",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "userId",
+            "value": "",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "1. Record Offline Payment",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 201\", function () {",
+                            "    pm.response.to.have.status(201);",
+                            "});",
+                            "",
+                            "pm.test(\"Response has success flag\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.success).to.be.true;",
+                            "});",
+                            "",
+                            "pm.test(\"Payment ID is returned\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.data.payment.id).to.exist;",
+                            "    pm.collectionVariables.set(\"paymentId\", jsonData.data.payment.id);",
+                            "});",
+                            "",
+                            "pm.test(\"Payment status is COMPLETED\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.data.payment.paymentStatus).to.eql(\"COMPLETED\");",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"transactionId\": \"{{transactionId}}\",\n  \"amount\": 150.00,\n  \"paymentMethod\": \"CASH\",\n  \"lateFee\": 100.00,\n  \"damageCharge\": 50.00,\n  \"notes\": \"Payment for overdue fine and book damage\"\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/payments/record",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "payments",
+                        "record"
+                    ]
+                },
+                "description": "Record offline payment (cash/card) at library counter. Requires ADMIN or LIBRARIAN role."
+            },
+            "response": []
+        },
+        {
+            "name": "2. Get Payment Details",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "pm.test(\"Response has payment data\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.success).to.be.true;",
+                            "    pm.expect(jsonData.data.payment).to.exist;",
+                            "});",
+                            "",
+                            "pm.test(\"Payment has user and transaction details\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.data.payment.user).to.exist;",
+                            "    pm.expect(jsonData.data.payment.transaction).to.exist;",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/payments/{{paymentId}}",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "payments",
+                        "{{paymentId}}"
+                    ]
+                },
+                "description": "Get detailed information about a specific payment."
+            },
+            "response": []
+        },
+        {
+            "name": "3. Get User Payment History",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "pm.test(\"Response has payments array\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.data.payments).to.be.an('array');",
+                            "});",
+                            "",
+                            "pm.test(\"Response has pagination metadata\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.data.pagination).to.exist;",
+                            "    pm.expect(jsonData.data.pagination.page).to.exist;",
+                            "    pm.expect(jsonData.data.pagination.total).to.exist;",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/payments/user/{{userId}}?page=1&limit=20&status=COMPLETED",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "payments",
+                        "user",
+                        "{{userId}}"
+                    ],
+                    "query": [
+                        {
+                            "key": "page",
+                            "value": "1"
+                        },
+                        {
+                            "key": "limit",
+                            "value": "20"
+                        },
+                        {
+                            "key": "status",
+                            "value": "COMPLETED"
+                        },
+                        {
+                            "key": "paymentMethod",
+                            "value": "CASH",
+                            "disabled": true
+                        },
+                        {
+                            "key": "startDate",
+                            "value": "2025-01-01",
+                            "disabled": true
+                        },
+                        {
+                            "key": "endDate",
+                            "value": "2025-12-31",
+                            "disabled": true
+                        },
+                        {
+                            "key": "sortBy",
+                            "value": "createdAt",
+                            "disabled": true
+                        },
+                        {
+                            "key": "sortOrder",
+                            "value": "desc",
+                            "disabled": true
+                        }
+                    ]
+                },
+                "description": "Get paginated payment history for a user with optional filtering by status, payment method, and date range."
+            },
+            "response": []
+        },
+        {
+            "name": "4. Get Transaction Payments",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "pm.test(\"Response has payments array\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.data.payments).to.be.an('array');",
+                            "});",
+                            "",
+                            "pm.test(\"Response has payment summary\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.data.summary).to.exist;",
+                            "    pm.expect(jsonData.data.summary.totalPaid).to.exist;",
+                            "    pm.expect(jsonData.data.summary.totalRefunded).to.exist;",
+                            "    pm.expect(jsonData.data.summary.netAmount).to.exist;",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/payments/transaction/{{transactionId}}",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "payments",
+                        "transaction",
+                        "{{transactionId}}"
+                    ]
+                },
+                "description": "Get all payments made for a specific transaction with payment summary (total paid, refunded, net amount)."
+            },
+            "response": []
+        },
+        {
+            "name": "5. Process Refund",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "pm.test(\"Refund processed successfully\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.success).to.be.true;",
+                            "    pm.expect(jsonData.message).to.include(\"Refund processed\");",
+                            "});",
+                            "",
+                            "pm.test(\"Refund amount is tracked\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.data.payment.refundAmount).to.exist;",
+                            "    pm.expect(jsonData.data.payment.refundDate).to.exist;",
+                            "});",
+                            "",
+                            "pm.test(\"Payment status is updated\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    var status = jsonData.data.payment.paymentStatus;",
+                            "    pm.expect(['PARTIALLY_REFUNDED', 'REFUNDED']).to.include(status);",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"refundAmount\": 50.00,\n  \"refundReason\": \"Book was returned in good condition, damage charge refunded\"\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/payments/{{paymentId}}/refund",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "payments",
+                        "{{paymentId}}",
+                        "refund"
+                    ]
+                },
+                "description": "Process full or partial refund for a payment. Requires ADMIN role only."
+            },
+            "response": []
+        },
+        {
+            "name": "6. Calculate Payment Breakdown",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test(\"Status code is 200\", function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "pm.test(\"Breakdown data is returned\", function () {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.expect(jsonData.data.fineAmount).to.exist;",
+                            "    pm.expect(jsonData.data.damageCharge).to.exist;",
+                            "    pm.expect(jsonData.data.totalDue).to.exist;",
+                            "    pm.expect(jsonData.data.totalPaid).to.exist;",
+                            "    pm.expect(jsonData.data.pendingAmount).to.exist;",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/payments/transaction/{{transactionId}}/breakdown",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "payments",
+                        "transaction",
+                        "{{transactionId}}",
+                        "breakdown"
+                    ]
+                },
+                "description": "Calculate payment breakdown for a transaction showing what's been paid and what's pending."
+            },
+            "response": []
+        }
+    ]
+}

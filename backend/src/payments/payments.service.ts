@@ -8,13 +8,13 @@ import { PrismaService } from '../common/services/prisma.service';
 import { RecordPaymentDto } from './dto/record-payment.dto';
 import { RefundPaymentDto } from './dto/refund-payment.dto';
 import { QueryPaymentsDto } from './dto/query-payments.dto';
-import { PaymentStatus, UserRole } from '@prisma/client';
+import { PaymentStatus, UserRole, PaymentMethod } from '@prisma/client';
 
 @Injectable()
 export class PaymentsService {
     constructor(private readonly prisma: PrismaService) { }
 
-    async recordPayment(dto: RecordPaymentDto, librarianId: string) {
+    async recordPayment(dto: RecordPaymentDto, _librarianId: string) {
         // Validate transaction if provided
         let userId: string;
 
@@ -166,7 +166,15 @@ export class PaymentsService {
         const skip = (page - 1) * limit;
 
         // Build where clause
-        const where: any = { userId };
+        const where: {
+            userId: string;
+            paymentStatus?: PaymentStatus;
+            paymentMethod?: PaymentMethod;
+            createdAt?: {
+                gte?: Date;
+                lte?: Date;
+            };
+        } = { userId };
 
         if (status) {
             where.paymentStatus = status;

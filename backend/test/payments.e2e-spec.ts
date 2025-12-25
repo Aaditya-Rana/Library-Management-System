@@ -37,7 +37,7 @@ describe('Payments (e2e)', () => {
         // Create test users
         const hashedPassword = await bcrypt.hash('password123', 10);
 
-        const librarian = await prisma.user.create({
+        const _librarian = await prisma.user.create({
             data: {
                 email: 'librarian@test.com',
                 password: hashedPassword,
@@ -61,7 +61,7 @@ describe('Payments (e2e)', () => {
             },
         });
 
-        const admin = await prisma.user.create({
+        const _admin = await prisma.user.create({
             data: {
                 email: 'admin@test.com',
                 password: hashedPassword,
