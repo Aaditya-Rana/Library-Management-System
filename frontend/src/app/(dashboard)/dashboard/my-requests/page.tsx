@@ -79,7 +79,7 @@ export default function MyRequestsPage() {
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                     <div className="flex items-start gap-4">
                                         <div className="w-16 h-24 bg-gray-100 rounded-md flex-shrink-0 overflow-hidden">
-                                            {request.book.coverImage ? (
+                                            {request.book?.coverImage ? (
                                                 <img
                                                     src={request.book.coverImage}
                                                     alt={request.book.title}
@@ -92,8 +92,8 @@ export default function MyRequestsPage() {
                                             )}
                                         </div>
                                         <div className="flex-1">
-                                            <h3 className="font-bold text-gray-900 mb-1">{request.book.title}</h3>
-                                            <p className="text-sm text-gray-500 mb-2">{request.book.author}</p>
+                                            <h3 className="font-bold text-gray-900 mb-1">{request.book?.title || 'Unknown Book'}</h3>
+                                            <p className="text-sm text-gray-500 mb-2">{request.book?.author || 'Unknown Author'}</p>
                                             <div className="flex flex-wrap items-center gap-2">
                                                 <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}>
                                                     {getStatusIcon(request.status)}
