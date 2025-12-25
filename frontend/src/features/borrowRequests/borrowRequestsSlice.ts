@@ -135,20 +135,24 @@ const borrowRequestsSlice = createSlice({
             })
             .addCase(fetchMyBorrowRequests.fulfilled, (state, action) => {
                 state.isLoading = false;
-                state.borrowRequests = action.payload.data || [];
+                // API returns { success: true, data: { requests: [...] } }
+                const requests = action.payload.data?.requests || action.payload.data || [];
+                state.borrowRequests = Array.isArray(requests) ? requests : [];
             })
             .addCase(fetchMyBorrowRequests.rejected, (state, action) => {
                 state.isLoading = false;
                 state.error = action.payload as string;
             })
-            // Fetch All Requests
+            // Fetch All Borrow Requests (Librarian/Admin)
             .addCase(fetchAllBorrowRequests.pending, (state) => {
                 state.isLoading = true;
                 state.error = null;
             })
             .addCase(fetchAllBorrowRequests.fulfilled, (state, action) => {
                 state.isLoading = false;
-                state.borrowRequests = action.payload.data || [];
+                // API returns { success: true, data: { requests: [...] } }
+                const requests = action.payload.data?.requests || action.payload.data || [];
+                state.borrowRequests = Array.isArray(requests) ? requests : [];
                 state.pagination = action.payload.meta || null;
             })
             .addCase(fetchAllBorrowRequests.rejected, (state, action) => {
