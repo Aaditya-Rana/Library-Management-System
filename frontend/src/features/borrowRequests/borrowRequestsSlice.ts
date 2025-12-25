@@ -135,8 +135,8 @@ const borrowRequestsSlice = createSlice({
             })
             .addCase(fetchMyBorrowRequests.fulfilled, (state, action) => {
                 state.isLoading = false;
-                // API returns { success: true, data: { requests: [...] } }
-                const requests = action.payload.data?.requests || action.payload.data || [];
+                // API returns { success: true, data: { borrowRequests: [...] } }
+                const requests = action.payload.data?.borrowRequests || action.payload.data || [];
                 state.borrowRequests = Array.isArray(requests) ? requests : [];
             })
             .addCase(fetchMyBorrowRequests.rejected, (state, action) => {
@@ -150,10 +150,10 @@ const borrowRequestsSlice = createSlice({
             })
             .addCase(fetchAllBorrowRequests.fulfilled, (state, action) => {
                 state.isLoading = false;
-                // API returns { success: true, data: { requests: [...] } }
-                const requests = action.payload.data?.requests || action.payload.data || [];
+                // API returns { success: true, data: { borrowRequests: [...] } }
+                const requests = action.payload.data?.borrowRequests || action.payload.data || [];
                 state.borrowRequests = Array.isArray(requests) ? requests : [];
-                state.pagination = action.payload.meta || null;
+                state.pagination = action.payload.data?.pagination || null;
             })
             .addCase(fetchAllBorrowRequests.rejected, (state, action) => {
                 state.isLoading = false;
