@@ -13,7 +13,8 @@ import {
     History,
     BookOpen,
     RotateCcw,
-    ClipboardList
+    ClipboardList,
+    DollarSign
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -35,12 +36,15 @@ export default function Sidebar() {
         { name: 'Manage Users', href: '/dashboard/admin/users', icon: Users },
         { name: 'Manage Books', href: '/dashboard/admin/books', icon: Book },
         { name: 'Reports', href: '/dashboard/admin/reports', icon: FileText },
+        { name: 'Settings', href: '/dashboard/admin/settings', icon: Settings },
     ];
 
     const librarianLinks = [
         { name: 'Librarian Desk', href: '/dashboard/librarian', icon: LayoutDashboard },
         { name: 'Issue Book', href: '/dashboard/librarian/issue', icon: BookOpen },
         { name: 'Return Book', href: '/dashboard/librarian/return', icon: RotateCcw },
+        { name: 'Requests', href: '/dashboard/librarian/requests', icon: ClipboardList },
+        { name: 'Record Payment', href: '/dashboard/librarian/record-payment', icon: DollarSign },
     ];
 
     let links = commonLinks;
