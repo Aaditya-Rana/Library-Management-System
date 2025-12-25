@@ -71,7 +71,8 @@ const settingsSlice = createSlice({
             })
             .addCase(fetchSettings.fulfilled, (state, action) => {
                 state.isLoading = false;
-                state.settings = action.payload.data || [];
+                // API returns { success: true, data: { settings: [...] } }
+                state.settings = action.payload.data?.settings || [];
             })
             .addCase(fetchSettings.rejected, (state, action) => {
                 state.isLoading = false;
@@ -84,11 +85,13 @@ const settingsSlice = createSlice({
             })
             .addCase(fetchSettingByKey.fulfilled, (state, action) => {
                 state.isLoading = false;
-                const index = state.settings.findIndex(s => s.key === action.payload.data.key);
+                // API returns { success: true, data: { setting: {...} } }
+                const setting = action.payload.data?.setting || action.payload.data;
+                const index = state.settings.findIndex(s => s.key === setting.key);
                 if (index !== -1) {
-                    state.settings[index] = action.payload.data;
+                    state.settings[index] = setting;
                 } else {
-                    state.settings.push(action.payload.data);
+                    state.settings.push(setting);
                 }
             })
             .addCase(fetchSettingByKey.rejected, (state, action) => {
@@ -97,9 +100,11 @@ const settingsSlice = createSlice({
             })
             // Update Setting
             .addCase(updateSetting.fulfilled, (state, action) => {
-                const index = state.settings.findIndex(s => s.key === action.payload.data.key);
+                // API returns { success: true, data: { setting: {...} } }
+                const setting = action.payload.data?.setting || action.payload.data;
+                const index = state.settings.findIndex(s => s.key === setting.key);
                 if (index !== -1) {
-                    state.settings[index] = action.payload.data;
+                    state.settings[index] = setting;
                 }
             });
     },
