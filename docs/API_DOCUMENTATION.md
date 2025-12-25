@@ -1027,7 +1027,431 @@ file: <image file>
 
 ---
 
-## 🚚 5. Deliveries APIs (Online Borrowing)
+## 💳 5. Payments APIs (Offline Payments)
+
+### 5.1 Record Offline Payment
+
+**Endpoint:** `POST /payments/record`
+
+**Access:** LIBRARIAN, ADMIN
+
+**Use Case:** Librarian records cash/card payment made by user at library counter for fines, deposits, or damage charges.
+
+**Request Body:**
+```json
+{
+  "transactionId": "trans-uuid-123",
+  "amount": 150.00,
+  "paymentMethod": "CASH",
+  "lateFee": 100.00,
+  "damageCharge": 50.00,
+  "notes": "Payment for overdue fine and book damage"
+}
+```
+
+**Response:** `201 Created`
+```json
+{
+  "success": true,
+  "message": "Payment recorded successfully",
+  "data": {
+    "payment": {
+      "id": "payment-uuid-1",
+      "userId": "user-uuid-123",
+      "transactionId": "trans-uuid-123",
+      "amount": 150.00,
+      "paymentMethod": "CASH",
+      "paymentStatus": "COMPLETED",
+      "lateFee": 100.00,
+      "damageCharge": 50.00,
+      "securityDeposit": 0,
+      "paymentDate": "2025-12-25T13:00:00Z",
+      "notes": "Payment for overdue fine and book damage",
+      "user": {
+        "id": "user-uuid-123",
+        "email": "john@example.com",
+        "firstName": "John",
+        "lastName": "Doe"
+      },
+      "transaction": {
+        "id": "trans-uuid-123",
+        "issueDate": "2025-12-01T10:00:00Z",
+        "returnDate": "2025-12-20T16:00:00Z",
+        "book": {
+          "title": "The Great Gatsby",
+          "author": "F. Scott Fitzgerald"
+        }
+      }
+    }
+  }
+}
+```
+
+**cURL Example:**
+```bash
+curl -X POST https://api.yourdomain.com/v1/payments/record \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "transactionId": "trans-uuid-123",
+    "amount": 150.00,
+    "paymentMethod": "CASH",
+    "lateFee": 100.00,
+    "damageCharge": 50.00,
+    "notes": "Payment for overdue fine and book damage"
+  }'
+```
+
+**Available Payment Methods:**
+- `CASH` - Cash payment at counter
+- `CARD` - Card payment at counter
+- `UPI` - UPI payment at counter
+- `NET_BANKING` - Net banking
+- `WALLET` - Digital wallet
+
+**Error Responses:**
+```json
+// 404 Not Found - Transaction not found
+{
+  "success": false,
+  "message": "Transaction not found",
+  "error": "NOT_FOUND"
+}
+
+// 400 Bad Request - Payment breakdown mismatch
+{
+  "success": false,
+  "message": "Payment amount must match the sum of breakdown components",
+  "error": "BAD_REQUEST"
+}
+
+// 403 Forbidden - Insufficient permissions
+{
+  "success": false,
+  "message": "Forbidden resource",
+  "error": "FORBIDDEN"
+}
+```
+
+---
+
+### 5.2 Get Payment Details
+
+**Endpoint:** `GET /payments/:id`
+
+**Access:** USER (own payments), LIBRARIAN, ADMIN
+
+**Use Case:** View detailed information about a specific payment.
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "payment": {
+      "id": "payment-uuid-1",
+      "userId": "user-uuid-123",
+      "transactionId": "trans-uuid-123",
+      "amount": 150.00,
+      "paymentMethod": "CASH",
+      "paymentStatus": "COMPLETED",
+      "lateFee": 100.00,
+      "damageCharge": 50.00,
+      "securityDeposit": 0,
+      "deliveryFee": 0,
+      "paymentDate": "2025-12-25T13:00:00Z",
+      "notes": "Payment for overdue fine and book damage",
+      "refundAmount": null,
+      "refundDate": null,
+      "refundReason": null,
+      "createdAt": "2025-12-25T13:00:00Z",
+      "updatedAt": "2025-12-25T13:00:00Z",
+      "user": {
+        "id": "user-uuid-123",
+        "email": "john@example.com",
+        "firstName": "John",
+        "lastName": "Doe"
+      },
+      "transaction": {
+        "id": "trans-uuid-123",
+        "issueDate": "2025-12-01T10:00:00Z",
+        "dueDate": "2025-12-15T23:59:59Z",
+        "returnDate": "2025-12-20T16:00:00Z",
+        "book": {
+          "title": "The Great Gatsby",
+          "author": "F. Scott Fitzgerald"
+        }
+      }
+    }
+  }
+}
+```
+
+**cURL Example:**
+```bash
+curl -X GET https://api.yourdomain.com/v1/payments/payment-uuid-1 \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+---
+
+### 5.3 Get User's Payment History
+
+**Endpoint:** `GET /payments/user/:userId`
+
+**Access:** USER (own), LIBRARIAN, ADMIN
+
+**Use Case:** View paginated payment history for a user with optional filtering.
+
+**Query Parameters:**
+```
+?page=1
+&limit=20
+&status=COMPLETED
+&paymentMethod=CASH
+&startDate=2025-01-01
+&endDate=2025-12-31
+&sortBy=createdAt
+&sortOrder=desc
+```
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "payments": [
+      {
+        "id": "payment-uuid-1",
+        "transactionId": "trans-uuid-123",
+        "amount": 150.00,
+        "paymentMethod": "CASH",
+        "paymentStatus": "COMPLETED",
+        "lateFee": 100.00,
+        "damageCharge": 50.00,
+        "paymentDate": "2025-12-25T13:00:00Z",
+        "refundAmount": null,
+        "transaction": {
+          "id": "trans-uuid-123",
+          "book": {
+            "title": "The Great Gatsby",
+            "author": "F. Scott Fitzgerald"
+          }
+        }
+      },
+      {
+        "id": "payment-uuid-2",
+        "transactionId": "trans-uuid-456",
+        "amount": 50.00,
+        "paymentMethod": "CARD",
+        "paymentStatus": "COMPLETED",
+        "lateFee": 50.00,
+        "paymentDate": "2025-12-20T14:00:00Z",
+        "refundAmount": null,
+        "transaction": {
+          "id": "trans-uuid-456",
+          "book": {
+            "title": "1984",
+            "author": "George Orwell"
+          }
+        }
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 20,
+      "total": 45,
+      "totalPages": 3
+    }
+  }
+}
+```
+
+**cURL Example:**
+```bash
+curl -X GET "https://api.yourdomain.com/v1/payments/user/user-uuid-123?page=1&limit=20&status=COMPLETED" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+---
+
+### 5.4 Get Transaction Payments
+
+**Endpoint:** `GET /payments/transaction/:transactionId`
+
+**Access:** USER (own transactions), LIBRARIAN, ADMIN
+
+**Use Case:** View all payments made for a specific transaction with payment summary.
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "payments": [
+      {
+        "id": "payment-uuid-1",
+        "userId": "user-uuid-123",
+        "amount": 100.00,
+        "paymentMethod": "CASH",
+        "paymentStatus": "COMPLETED",
+        "lateFee": 100.00,
+        "paymentDate": "2025-12-20T13:00:00Z",
+        "refundAmount": 0,
+        "user": {
+          "id": "user-uuid-123",
+          "email": "john@example.com",
+          "firstName": "John",
+          "lastName": "Doe"
+        }
+      },
+      {
+        "id": "payment-uuid-2",
+        "userId": "user-uuid-123",
+        "amount": 50.00,
+        "paymentMethod": "CASH",
+        "paymentStatus": "PARTIALLY_REFUNDED",
+        "damageCharge": 50.00,
+        "paymentDate": "2025-12-22T15:00:00Z",
+        "refundAmount": 10.00,
+        "refundReason": "Damage charge reduced after inspection",
+        "user": {
+          "id": "user-uuid-123",
+          "email": "john@example.com",
+          "firstName": "John",
+          "lastName": "Doe"
+        }
+      }
+    ],
+    "summary": {
+      "totalPaid": 150.00,
+      "totalRefunded": 10.00,
+      "netAmount": 140.00,
+      "paymentCount": 2
+    }
+  }
+}
+```
+
+**cURL Example:**
+```bash
+curl -X GET https://api.yourdomain.com/v1/payments/transaction/trans-uuid-123 \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+---
+
+### 5.5 Process Refund
+
+**Endpoint:** `POST /payments/:id/refund`
+
+**Access:** ADMIN only
+
+**Use Case:** Admin processes full or partial refund for a payment (e.g., overpayment, reduced damage charge, canceled service).
+
+**Request Body:**
+```json
+{
+  "refundAmount": 50.00,
+  "refundReason": "Book was returned in good condition, damage charge refunded"
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "message": "Refund processed successfully",
+  "data": {
+    "payment": {
+      "id": "payment-uuid-1",
+      "userId": "user-uuid-123",
+      "amount": 150.00,
+      "paymentMethod": "CASH",
+      "paymentStatus": "PARTIALLY_REFUNDED",
+      "lateFee": 100.00,
+      "damageCharge": 50.00,
+      "refundAmount": 50.00,
+      "refundDate": "2025-12-25T14:00:00Z",
+      "refundReason": "Book was returned in good condition, damage charge refunded",
+      "user": {
+        "id": "user-uuid-123",
+        "email": "john@example.com",
+        "firstName": "John",
+        "lastName": "Doe"
+      }
+    }
+  }
+}
+```
+
+**Payment Status After Refund:**
+- `PARTIALLY_REFUNDED` - If refund amount is less than total payment
+- `REFUNDED` - If refund amount equals total payment
+
+**cURL Example:**
+```bash
+curl -X POST https://api.yourdomain.com/v1/payments/payment-uuid-1/refund \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "refundAmount": 50.00,
+    "refundReason": "Book was returned in good condition, damage charge refunded"
+  }'
+```
+
+**Error Responses:**
+```json
+// 400 Bad Request - Excessive refund amount
+{
+  "success": false,
+  "message": "Refund amount cannot exceed 100.00",
+  "error": "BAD_REQUEST"
+}
+
+// 403 Forbidden - Non-admin user
+{
+  "success": false,
+  "message": "Forbidden resource",
+  "error": "FORBIDDEN"
+}
+```
+
+---
+
+### 5.6 Calculate Payment Breakdown
+
+**Endpoint:** `GET /payments/transaction/:transactionId/breakdown`
+
+**Access:** Authenticated users
+
+**Use Case:** Calculate outstanding payment amount for a transaction, showing what's been paid and what's pending.
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "fineAmount": 100.00,
+    "damageCharge": 50.00,
+    "securityDeposit": 200.00,
+    "totalDue": 150.00,
+    "totalPaid": 100.00,
+    "pendingAmount": 50.00
+  }
+}
+```
+
+**cURL Example:**
+```bash
+curl -X GET https://api.yourdomain.com/v1/payments/transaction/trans-uuid-123/breakdown \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+---
+
+## 🚚 6. Deliveries APIs (Online Borrowing)
+
 
 ### 5.1 Create Delivery Request
 

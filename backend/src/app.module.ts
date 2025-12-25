@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { BooksModule } from './books/books.module';
 import { TransactionsModule } from './transactions/transactions.module';
+import { PaymentsModule } from './payments/payments.module';
 import { PrismaService } from './common/services/prisma.service';
 
 @Module({
@@ -18,6 +19,7 @@ import { PrismaService } from './common/services/prisma.service';
     UsersModule,
     BooksModule,
     TransactionsModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
   providers: [
