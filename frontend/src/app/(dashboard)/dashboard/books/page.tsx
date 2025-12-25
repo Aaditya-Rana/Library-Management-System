@@ -3,15 +3,18 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { fetchUserHistory } from '@/features/transactions/transactionsSlice';
+import { fetchUserHistory, payFine } from '@/features/transactions/transactionsSlice';
 import { Button } from '@/components/ui/Button';
 import { BookOpen, Clock, AlertTriangle } from 'lucide-react';
-import api from '@/services/api'; // Keep api for renew action for now until renew thunk exists
+import api from '@/services/api';
+import PayFineModal from '@/components/PayFineModal';
 
 export default function MyBooksPage() {
     const { user } = useAppSelector((state) => state.auth);
     const { transactions, isLoading } = useAppSelector((state) => state.transactions);
     const dispatch = useAppDispatch();
+    const [showPayFineModal, setShowPayFineModal] = useState(false);
+    const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
 
     useEffect(() => {
         if (user) {
@@ -19,21 +22,26 @@ export default function MyBooksPage() {
         }
     }, [dispatch, user]);
 
-    // Filter for active transactions (ISSUED or OVERDUE)
-    const activeTransactions = transactions.filter(t => t.status === 'ISSUED' || t.status === 'OVERDUE' || t.status === 'RENEWED');
-    // Note: status might vary, checking logic. Usually active = NOT RETURNED.
-    // Simplifying: anything not RETURNED.
     const currentBooks = transactions.filter(t => t.status !== 'RETURNED');
+
+    const handlePayFine = async (data: { amount: number; paymentMethod: string; transactionIdRef?: string }) => {
+        if (!selectedTransaction) return;
+        try {
+            await dispatch(payFine({ transactionId: selectedTransaction.id, ...data })).unwrap();
+            alert('Fine paid successfully!');
+            setShowPayFineModal(false);
+            dispatch(fetchUserHistory({ userId: user!.id, limit: 100 }));
+        } catch (error: any) {
+            alert(error || 'Failed to pay fine');
+        }
+    };
 
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold text-gray-900">My Books</h1>
-                <Link href="/dashboard/history">
-                    <Button variant="outline">History</Button>
-                </Link>
+                <Link href="/dashboard/history"><Button variant="outline">History</Button></Link>
             </div>
-
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 {isLoading ? (
                     <div className="p-8 text-center text-gray-500">Loading your books...</div>
@@ -42,7 +50,6 @@ export default function MyBooksPage() {
                         {currentBooks.map((transaction) => {
                             const isOverdue = new Date(transaction.dueDate) < new Date() && transaction.status !== 'RETURNED';
                             const daysLeft = Math.ceil((new Date(transaction.dueDate).getTime() - new Date().getTime()) / (1000 * 3600 * 24));
-
                             return (
                                 <div key={transaction.id} className="p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
                                     <div className="flex items-center gap-4 w-full sm:w-auto">
@@ -50,23 +57,18 @@ export default function MyBooksPage() {
                                             {transaction.book?.coverImage ? (
                                                 <img src={transaction.book.coverImage} alt={transaction.book.title} className="w-full h-full object-cover" />
                                             ) : (
-                                                <div className="w-full h-full flex items-center justify-center">
-                                                    <BookOpen className="w-6 h-6 text-gray-400" />
-                                                </div>
+                                                <div className="w-full h-full flex items-center justify-center"><BookOpen className="w-6 h-6 text-gray-400" /></div>
                                             )}
                                         </div>
                                         <div>
                                             <h3 className="font-bold text-gray-900">{transaction.book?.title}</h3>
                                             <p className="text-sm text-gray-500">{transaction.book?.author}</p>
                                             <div className="flex items-center gap-2 mt-2">
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${isOverdue ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                                                    }`}>
+                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${isOverdue ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
                                                     {isOverdue ? 'Overdue' : transaction.status}
                                                 </span>
                                                 {transaction.fineAmount && transaction.fineAmount > 0 && (
-                                                    <span className="text-xs font-bold text-red-600">
-                                                        Fine: ₹{transaction.fineAmount}
-                                                    </span>
+                                                    <span className="text-xs font-bold text-red-600">Fine: ₹{transaction.fineAmount}</span>
                                                 )}
                                             </div>
                                         </div>
@@ -83,23 +85,20 @@ export default function MyBooksPage() {
                                             </div>
                                         )}
                                         <div className="flex gap-2">
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={async () => {
-                                                    try {
-                                                        await api.post(`/transactions/${transaction.id}/renew`);
-                                                        alert('Book renewed successfully!');
-                                                        // Refresh
-                                                        dispatch(fetchUserHistory({ userId: user!.id, limit: 100 }));
-                                                    } catch (e: any) {
-                                                        alert(e.response?.data?.message || 'Failed to renew');
-                                                    }
-                                                }}
-                                            >
-                                                Renew
-                                            </Button>
-                                            <Button size="sm" variant="outline">Details</Button>
+                                            {transaction.fineAmount && transaction.fineAmount > 0 && (
+                                                <Button size="sm" variant="outline" onClick={() => { setSelectedTransaction(transaction); setShowPayFineModal(true); }} className="text-red-600 border-red-600 hover:bg-red-50">
+                                                    Pay Fine
+                                                </Button>
+                                            )}
+                                            <Button size="sm" variant="outline" onClick={async () => {
+                                                try {
+                                                    await api.post(`/transactions/${transaction.id}/renew`);
+                                                    alert('Book renewed successfully!');
+                                                    dispatch(fetchUserHistory({ userId: user!.id, limit: 100 }));
+                                                } catch (e: any) {
+                                                    alert(e.response?.data?.message || 'Failed to renew');
+                                                }
+                                            }}>Renew</Button>
                                         </div>
                                     </div>
                                 </div>
@@ -111,12 +110,11 @@ export default function MyBooksPage() {
                         <BookOpen className="w-12 h-12 mx-auto text-gray-300 mb-4" />
                         <p className="text-lg font-medium text-gray-900">No active books</p>
                         <p className="mb-6">You have not borrowed any books currently.</p>
-                        <Link href="/books">
-                            <Button>Browse Library</Button>
-                        </Link>
+                        <Link href="/books"><Button>Browse Library</Button></Link>
                     </div>
                 )}
             </div>
+            <PayFineModal isOpen={showPayFineModal} onClose={() => setShowPayFineModal(false)} transaction={selectedTransaction} onPayFine={handlePayFine} isLoading={isLoading} />
         </div>
     );
 }
