@@ -851,10 +851,9 @@ export class TransactionsService {
         // Issue the book (create transaction)
         const transaction = await this.issueBook(
             {
-                userId: borrowRequest.userId,
                 bookId: borrowRequest.bookId,
-                bookCopyId,
-                dueDate: calculatedDueDate,
+                userId: borrowRequest.userId,
+                dueDate: calculatedDueDate.toISOString(),
                 notes: notes || borrowRequest.notes,
             },
             librarianId,
