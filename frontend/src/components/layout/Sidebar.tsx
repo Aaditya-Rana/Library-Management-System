@@ -12,7 +12,8 @@ import {
     LogOut,
     History,
     BookOpen,
-    RotateCcw
+    RotateCcw,
+    ClipboardList
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -25,6 +26,7 @@ export default function Sidebar() {
     const commonLinks = [
         { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
         { name: 'My Books', href: '/dashboard/books', icon: BookOpen },
+        { name: 'My Requests', href: '/dashboard/my-requests', icon: ClipboardList },
         { name: 'History', href: '/dashboard/history', icon: History },
         { name: 'Profile', href: '/dashboard/profile', icon: Settings },
     ];
