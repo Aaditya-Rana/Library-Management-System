@@ -2531,3 +2531,343 @@ curl -X POST https://api.yourdomain.com/v1/transactions/request \
 
 ---
 
+
+## 7. Reports & Analytics APIs
+
+### 7.1 Dashboard Statistics
+
+**Endpoint:** `GET /reports/dashboard`
+
+**Access:** ADMIN, LIBRARIAN
+
+**Description:** Get comprehensive library dashboard statistics
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "overview": {
+      "totalBooks": 150,
+      "totalUsers": 75,
+      "totalTransactions": 320,
+      "activeTransactions": 45,
+      "overdueTransactions": 8,
+      "availableBooks": 105
+    },
+    "financial": {
+      "pendingFines": 450.50
+    },
+    "today": {
+      "booksIssued": 12,
+      "booksReturned": 8
+    }
+  }
+}
+```
+
+**cURL:**
+```bash
+curl -X GET http://localhost:3000/reports/dashboard \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN"
+```
+
+---
+
+### 7.2 Active Users Report
+
+**Endpoint:** `GET /reports/users/active`
+
+**Access:** ADMIN, LIBRARIAN
+
+**Query Parameters:**
+- `limit` (optional, number, default: 10) - Number of users to return
+- `startDate` (optional, ISO 8601) - Filter from date
+- `endDate` (optional, ISO 8601) - Filter to date
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "users": [
+      {
+        "id": "user-uuid-1",
+        "email": "user@example.com",
+        "firstName": "John",
+        "lastName": "Doe",
+        "membershipType": "PREMIUM",
+        "transactionCount": 25
+      }
+    ]
+  }
+}
+```
+
+**cURL:**
+```bash
+curl -X GET "http://localhost:3000/reports/users/active?limit=10&startDate=2024-01-01" \
+  -H "Authorization: Bearer YOUR_LIBRARIAN_TOKEN"
+```
+
+---
+
+### 7.3 Overdue Users List
+
+**Endpoint:** `GET /reports/users/overdue`
+
+**Access:** ADMIN, LIBRARIAN
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "overdueUsers": [
+      {
+        "user": {
+          "id": "user-uuid-1",
+          "email": "user@example.com",
+          "firstName": "John",
+          "lastName": "Doe",
+          "phone": "+1234567890"
+        },
+        "overdueBooks": [
+          {
+            "book": {
+              "id": "book-uuid-1",
+              "title": "Sample Book",
+              "author": "Author Name",
+              "isbn": "978-0-123456-78-9"
+            },
+            "dueDate": "2024-12-15T23:59:59Z",
+            "daysOverdue": 5,
+            "fine": 25.00
+          }
+        ],
+        "totalFines": 25.00
+      }
+    ],
+    "totalOverdueCount": 8
+  }
+}
+```
+
+**cURL:**
+```bash
+curl -X GET http://localhost:3000/reports/users/overdue \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN"
+```
+
+---
+
+### 7.4 Popular Books Report
+
+**Endpoint:** `GET /reports/books/popular`
+
+**Access:** ADMIN, LIBRARIAN
+
+**Query Parameters:**
+- `limit` (optional, number, default: 10) - Number of books
+- `startDate` (optional, ISO 8601) - Filter from date
+- `endDate` (optional, ISO 8601) - Filter to date
+- `category` (optional, string) - Filter by category
+- `genre` (optional, string) - Filter by genre
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "books": [
+      {
+        "id": "book-uuid-1",
+        "title": "Popular Book",
+        "author": "Author Name",
+        "isbn": "978-0-123456-78-9",
+        "category": "Fiction",
+        "genre": "Mystery",
+        "coverImageUrl": null,
+        "availableCopies": 2,
+        "totalCopies": 5,
+        "borrowCount": 45
+      }
+    ]
+  }
+}
+```
+
+**cURL:**
+```bash
+curl -X GET "http://localhost:3000/reports/books/popular?limit=5&category=Fiction" \
+  -H "Authorization: Bearer YOUR_LIBRARIAN_TOKEN"
+```
+
+---
+
+### 7.5 Low Circulation Books
+
+**Endpoint:** `GET /reports/books/low-circulation`
+
+**Access:** ADMIN, LIBRARIAN
+
+**Query Parameters:**
+- `limit` (optional, number, default: 10) - Number of books
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "books": [
+      {
+        "id": "book-uuid-1",
+        "title": "Underutilized Book",
+        "author": "Author Name",
+        "isbn": "978-0-123456-78-9",
+        "category": "Non-Fiction",
+        "genre": "History",
+        "totalCopies": 3,
+        "availableCopies": 3,
+        "borrowCount": 1
+      }
+    ]
+  }
+}
+```
+
+**cURL:**
+```bash
+curl -X GET "http://localhost:3000/reports/books/low-circulation?limit=10" \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN"
+```
+
+---
+
+### 7.6 Category Distribution
+
+**Endpoint:** `GET /reports/books/categories`
+
+**Access:** ADMIN, LIBRARIAN
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "categories": [
+      {
+        "category": "Fiction",
+        "bookCount": 85,
+        "totalCopies": 250,
+        "availableCopies": 180
+      },
+      {
+        "category": "Non-Fiction",
+        "bookCount": 65,
+        "totalCopies": 150,
+        "availableCopies": 120
+      }
+    ]
+  }
+}
+```
+
+**cURL:**
+```bash
+curl -X GET http://localhost:3000/reports/books/categories \
+  -H "Authorization: Bearer YOUR_LIBRARIAN_TOKEN"
+```
+
+---
+
+### 7.7 Circulation Statistics
+
+**Endpoint:** `GET /reports/circulation`
+
+**Access:** ADMIN, LIBRARIAN
+
+**Query Parameters:**
+- `groupBy` (optional, enum: day|week|month|year, default: month) - Grouping period
+- `startDate` (optional, ISO 8601) - Filter from date
+- `endDate` (optional, ISO 8601) - Filter to date
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "circulation": [
+      {
+        "period": "2024-01",
+        "issued": 120,
+        "returned": 95,
+        "active": 25
+      },
+      {
+        "period": "2024-02",
+        "issued": 135,
+        "returned": 110,
+        "active": 25
+      }
+    ]
+  }
+}
+```
+
+**cURL:**
+```bash
+curl -X GET "http://localhost:3000/reports/circulation?groupBy=month&startDate=2024-01-01" \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN"
+```
+
+---
+
+### 7.8 Financial Summary (Admin Only)
+
+**Endpoint:** `GET /reports/financial/summary`
+
+**Access:** ADMIN only
+
+**Query Parameters:**
+- `startDate` (optional, ISO 8601) - Filter from date
+- `endDate` (optional, ISO 8601) - Filter to date
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "data": {
+    "totalRevenue": 15750.00,
+    "totalFinesCollected": 2450.50,
+    "pendingFines": 650.00,
+    "pendingFineCount": 12,
+    "paymentsByMethod": [
+      {
+        "method": "CASH",
+        "count": 145,
+        "amount": 8500.00
+      },
+      {
+        "method": "CARD",
+        "count": 98,
+        "amount": 5750.00
+      },
+      {
+        "method": "UPI",
+        "count": 67,
+        "amount": 1500.00
+      }
+    ]
+  }
+}
+```
+
+**cURL:**
+```bash
+curl -X GET "http://localhost:3000/reports/financial/summary?startDate=2024-01-01&endDate=2024-12-31" \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN"
+```
+
+---
+
