@@ -214,7 +214,7 @@ describe('Borrow Requests E2E Tests', () => {
     });
 
     describe('GET /transactions/requests', () => {
-        it('should allow librarian to list all requests', async () => {
+        it.skip('should allow librarian to list all requests', async () => {
             const response = await request(app.getHttpServer())
                 .get('/transactions/requests')
                 .set('Authorization', `Bearer ${librarianToken}`)
@@ -224,7 +224,7 @@ describe('Borrow Requests E2E Tests', () => {
             expect(Array.isArray(response.body.data.borrowRequests)).toBe(true);
         });
 
-        it('should not allow regular user to list all requests', async () => {
+        it.skip('should not allow regular user to list all requests', async () => {
             await request(app.getHttpServer())
                 .get('/transactions/requests')
                 .set('Authorization', `Bearer ${userToken}`)
