@@ -133,17 +133,34 @@ describe('Borrow Requests E2E Tests', () => {
     });
 
     afterAll(async () => {
-        // Cleanup
-        await prisma.borrowRequest.deleteMany({
-            where: { userId },
-        });
-        await prisma.bookCopy.deleteMany({ where: { bookId } });
-        await prisma.book.delete({ where: { id: bookId } });
-        await prisma.user.deleteMany({
-            where: {
-                id: { in: [adminId, librarianId, userId] },
-            },
-        });
+        // Cleanup in correct order to avoid foreign key constraints
+        try {
+            // Delete borrow requests first
+            await prisma.borrowRequest.deleteMany({
+                where: { userId },
+            });
+
+            // Delete transactions if any
+            await prisma.transaction.deleteMany({
+                where: { userId },
+            });
+
+            // Delete book copies
+            if (bookId) {
+                await prisma.bookCopy.deleteMany({ where: { bookId } });
+                // Delete book
+                await prisma.book.delete({ where: { id: bookId } }).catch(() => { });
+            }
+
+            // Delete users
+            await prisma.user.deleteMany({
+                where: {
+                    id: { in: [adminId, librarianId, userId] },
+                },
+            });
+        } catch (error) {
+            console.error('Cleanup error:', error);
+        }
 
         await app.close();
     });
