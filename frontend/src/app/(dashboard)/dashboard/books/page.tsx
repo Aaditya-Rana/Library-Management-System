@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -9,19 +7,26 @@ import { BookOpen, Clock, AlertTriangle } from 'lucide-react';
 import api from '@/services/api';
 import PayFineModal from '@/components/PayFineModal';
 import toast from 'react-hot-toast';
+import Pagination from '@/components/Pagination';
 
 export default function MyBooksPage() {
     const { user } = useAppSelector((state) => state.auth);
-    const { transactions, isLoading } = useAppSelector((state) => state.transactions);
+    const { transactions, isLoading, pagination } = useAppSelector((state) => state.transactions);
     const dispatch = useAppDispatch();
     const [showPayFineModal, setShowPayFineModal] = useState(false);
     const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(20);
 
     useEffect(() => {
         if (user) {
-            dispatch(fetchUserHistory({ userId: user.id, limit: 100 }));
+            dispatch(fetchUserHistory({
+                userId: user.id,
+                page: currentPage,
+                limit: itemsPerPage
+            }));
         }
-    }, [dispatch, user]);
+    }, [dispatch, user, currentPage, itemsPerPage]);
 
     // Include active books AND returned books with unpaid fines
     const currentBooks = transactions.filter(t =>
@@ -34,10 +39,20 @@ export default function MyBooksPage() {
             await dispatch(payFine({ transactionId: selectedTransaction.id, ...data })).unwrap();
             toast.success('Fine paid successfully!');
             setShowPayFineModal(false);
-            dispatch(fetchUserHistory({ userId: user!.id, limit: 100 }));
+            dispatch(fetchUserHistory({ userId: user!.id, page: currentPage, limit: itemsPerPage }));
         } catch (error: any) {
             toast.error(error || 'Failed to pay fine');
         }
+    };
+
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleItemsPerPageChange = (limit: number) => {
+        setItemsPerPage(limit);
+        setCurrentPage(1);
     };
 
     return (
@@ -118,7 +133,22 @@ export default function MyBooksPage() {
                     </div>
                 )}
             </div>
-            <PayFineModal isOpen={showPayFineModal} onClose={() => setShowPayFineModal(false)} transaction={selectedTransaction} onPayFine={handlePayFine} isLoading={isLoading} />
+
+            {/* Pagination */}
+            {pagination && pagination.totalPages > 1 && (
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={pagination.totalPages}
+                    totalItems={pagination.total}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={handlePageChange}
+                    onItemsPerPageChange={handleItemsPerPageChange}
+                />
+            )}
+
+            {showPayFineModal && selectedTransaction && (
+                <PayFineModal isOpen={showPayFineModal} onClose={() => setShowPayFineModal(false)} transaction={selectedTransaction} onPayFine={handlePayFine} isLoading={isLoading} />
+            )}
         </div>
     );
 }
