@@ -23,12 +23,8 @@ export default function HomePage() {
 
   useEffect(() => {
     const fetchPopularBooks = async () => {
-      if (!isAuthenticated) {
-        setIsLoading(false);
-        return;
-      }
       try {
-        // Adjust endpoint based on actual API
+        // Fetch books for everyone (public home page)
         const response = await api.get('/books?limit=4');
         setPopularBooks(response.data.data || []);
       } catch (error) {
@@ -39,7 +35,7 @@ export default function HomePage() {
     };
 
     fetchPopularBooks();
-  }, [isAuthenticated]);
+  }, []);
 
   return (
     <div className="space-y-20 pb-20">
@@ -112,18 +108,7 @@ export default function HomePage() {
               </div>
             ))}
           </div>
-        ) : !isAuthenticated ? (
-          <div className="text-center py-12 bg-gray-50 rounded-xl border border-gray-100">
-            <BookOpen className="w-12 h-12 text-primary-200 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Sign in to view books</h3>
-            <p className="text-gray-500 mb-6 max-w-md mx-auto">
-              Join our community to access our extensive collection of books and periodicals.
-            </p>
-            <Link href="/login">
-              <Button>Sign in to Browse</Button>
-            </Link>
-          </div>
-        ) : (
+        ) : popularBooks.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {popularBooks.map((book) => (
               <Link key={book.id} href={`/books/${book.id}`}>
