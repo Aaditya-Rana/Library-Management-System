@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { useAppDispatch } from '@/store/hooks';
+import { useRouter } from 'next/navigation';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { createBorrowRequest } from '@/features/borrowRequests/borrowRequestsSlice';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { BookPlus, X } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 interface BorrowRequestButtonProps {
     bookId: string;
@@ -15,9 +17,23 @@ interface BorrowRequestButtonProps {
 
 export function BorrowRequestButton({ bookId, bookTitle, availableCopies }: BorrowRequestButtonProps) {
     const dispatch = useAppDispatch();
+    const router = useRouter();
+    const { user, isAuthenticated } = useAppSelector((state) => state.auth);
     const [isOpen, setIsOpen] = useState(false);
     const [notes, setNotes] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleButtonClick = () => {
+        if (!isAuthenticated || !user) {
+            toast.error('Please sign in to borrow books', {
+                duration: 5000,
+                icon: '🔒',
+            });
+            setTimeout(() => router.push('/login'), 1500);
+            return;
+        }
+        setIsOpen(true);
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -25,23 +41,25 @@ export function BorrowRequestButton({ bookId, bookTitle, availableCopies }: Borr
 
         try {
             await dispatch(createBorrowRequest({ bookId, notes: notes || undefined })).unwrap();
-            alert('Borrow request submitted successfully!');
+            toast.success('Borrow request submitted successfully!', {
+                icon: '📚',
+            });
             setIsOpen(false);
             setNotes('');
         } catch (error: any) {
-            alert(error || 'Failed to submit request');
+            toast.error(error || 'Failed to submit request');
         } finally {
             setIsSubmitting(false);
         }
     };
 
     if (availableCopies === 0) {
-        return null; // Don't show button if no copies available
+        return null;
     }
 
     return (
         <>
-            <Button onClick={() => setIsOpen(true)} className="w-full">
+            <Button onClick={handleButtonClick} className="w-full">
                 <BookPlus className="w-4 h-4 mr-2" />
                 Request to Borrow
             </Button>

@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -8,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { BookOpen, Clock, AlertTriangle } from 'lucide-react';
 import api from '@/services/api';
 import PayFineModal from '@/components/PayFineModal';
+import toast from 'react-hot-toast';
 
 export default function MyBooksPage() {
     const { user } = useAppSelector((state) => state.auth);
@@ -31,11 +30,11 @@ export default function MyBooksPage() {
         if (!selectedTransaction) return;
         try {
             await dispatch(payFine({ transactionId: selectedTransaction.id, ...data })).unwrap();
-            alert('Fine paid successfully!');
+            toast.success('Fine paid successfully!');
             setShowPayFineModal(false);
             dispatch(fetchUserHistory({ userId: user!.id, limit: 100 }));
         } catch (error: any) {
-            alert(error || 'Failed to pay fine');
+            toast.error(error || 'Failed to pay fine');
         }
     };
 
@@ -96,10 +95,10 @@ export default function MyBooksPage() {
                                             <Button size="sm" variant="outline" onClick={async () => {
                                                 try {
                                                     await api.post(`/transactions/${transaction.id}/renew`);
-                                                    alert('Book renewed successfully!');
+                                                    toast.success('Book renewed successfully!');
                                                     dispatch(fetchUserHistory({ userId: user!.id, limit: 100 }));
                                                 } catch (e: any) {
-                                                    alert(e.response?.data?.message || 'Failed to renew');
+                                                    toast.error(e.response?.data?.message || 'Failed to renew');
                                                 }
                                             }}>Renew</Button>
                                         </div>
