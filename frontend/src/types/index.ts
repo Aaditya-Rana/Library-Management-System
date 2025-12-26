@@ -184,12 +184,23 @@ export interface DeliveryRequest {
 }
 
 export interface DashboardStats {
-    totalBooks: number;
-    totalUsers: number;
-    activeLoans: number;
-    overdueBooks: number;
-    totalRevenue: number;
-    pendingRequests: number;
+    overview: {
+        totalBooks: number;
+        availableBooks: number;
+        totalUsers: number;
+        activeTransactions: number;
+        overdueTransactions: number;
+    };
+    financial: {
+        totalRevenue: number;
+        pendingFines: number;
+        collectedFines: number;
+    };
+    today: {
+        newUsers: number;
+        newTransactions: number;
+        returned: number;
+    };
 }
 
 export interface PopularBook {
