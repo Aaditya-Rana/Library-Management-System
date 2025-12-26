@@ -1,20 +1,45 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchMyBorrowRequests, cancelBorrowRequest } from '@/features/borrowRequests/borrowRequestsSlice';
 import { Button } from '@/components/ui/Button';
 import { BookOpen, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import Pagination from '@/components/Pagination';
 
 export default function MyRequestsPage() {
     const dispatch = useAppDispatch();
-    const { borrowRequests, isLoading, error } = useAppSelector((state) => state.borrowRequests);
     const { user } = useAppSelector((state) => state.auth);
+    const { borrowRequests, isLoading, pagination } = useAppSelector((state) => state.borrowRequests);
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(20);
 
     useEffect(() => {
-        dispatch(fetchMyBorrowRequests());
-    }, [dispatch]);
+        if (user) {
+            dispatch(fetchMyBorrowRequests({
+                userId: user.id,
+                page: currentPage,
+                limit: itemsPerPage
+            }));
+        }
+    }, [dispatch, user, currentPage, itemsPerPage]);
+
+    const handleStatusFilterChange = (status: string) => {
+        setStatusFilter(status);
+        setCurrentPage(1); // Reset to first page when filter changes
+    };
+
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleItemsPerPageChange = (limit: number) => {
+        setItemsPerPage(limit);
+        setCurrentPage(1);
+    };
 
     const handleCancel = async (id: string) => {
         if (confirm('Are you sure you want to cancel this request?')) {
@@ -62,12 +87,6 @@ export default function MyRequestsPage() {
                     <p className="text-gray-600">Track the status of your book requests</p>
                 </div>
             </div>
-
-            {error && (
-                <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
-                    {error}
-                </div>
-            )}
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 {isLoading ? (
@@ -146,6 +165,18 @@ export default function MyRequestsPage() {
                     </div>
                 )}
             </div>
+
+            {/* Pagination */}
+            {pagination && pagination.totalPages > 1 && (
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={pagination.totalPages}
+                    totalItems={pagination.total}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={handlePageChange}
+                    onItemsPerPageChange={handleItemsPerPageChange}
+                />
+            )}
         </div>
     );
 }

@@ -34,12 +34,16 @@ export const createBorrowRequest = createAsyncThunk(
 // Get user's borrow requests
 export const fetchMyBorrowRequests = createAsyncThunk(
     'borrowRequests/fetchMy',
-    async (_, { rejectWithValue }) => {
+    async (params: { userId: string; page?: number; limit?: number } = { userId: '' }, { rejectWithValue }) => {
         try {
-            const response = await api.get('/transactions/requests/my');
+            const queryParams = new URLSearchParams();
+            if (params.page) queryParams.append('page', params.page.toString());
+            if (params.limit) queryParams.append('limit', params.limit.toString());
+
+            const response = await api.get(`/transactions/requests/my?${queryParams.toString()}`);
             return response.data;
         } catch (error: any) {
-            return rejectWithValue(error.response?.data?.message || 'Failed to fetch requests');
+            return rejectWithValue(error.response?.data?.message || 'Failed to fetch borrow requests');
         }
     }
 );
