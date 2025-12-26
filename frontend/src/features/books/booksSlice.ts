@@ -20,12 +20,20 @@ const initialState: BooksState = {
 
 export const fetchBooks = createAsyncThunk(
     'books/fetchAll',
-    async (params: { page?: number; limit?: number; search?: string } = {}, { rejectWithValue }) => {
+    async (params: {
+        page?: number;
+        limit?: number;
+        search?: string;
+        genre?: string;
+        availability?: string;
+    } = {}, { rejectWithValue }) => {
         try {
             const queryParams = new URLSearchParams();
             if (params.page) queryParams.append('page', params.page.toString());
             if (params.limit) queryParams.append('limit', params.limit.toString());
             if (params.search) queryParams.append('search', params.search);
+            if (params.genre) queryParams.append('genre', params.genre);
+            if (params.availability) queryParams.append('availability', params.availability);
 
             const response = await api.get(`/books?${queryParams.toString()}`);
             return response.data; // Expect { data: [], meta: {} }
