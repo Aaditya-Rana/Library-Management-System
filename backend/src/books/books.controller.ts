@@ -28,11 +28,11 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '@prisma/client';
 
 @Controller('books')
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class BooksController {
     constructor(private readonly booksService: BooksService) { }
 
     @Post()
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
     @UseInterceptors(FileInterceptor('coverImage'))
     async create(
@@ -47,11 +47,17 @@ export class BooksController {
         };
     }
 
+    /**
+     * Get paginated list of books (PUBLIC - no auth required)
+     */
     @Get()
     async findAll(@Query() queryDto: QueryBooksDto) {
         return this.booksService.findAll(queryDto);
     }
 
+    /**
+     * Get book by ISBN (PUBLIC - no auth required)
+     */
     @Get('isbn/:isbn')
     async findByISBN(@Param('isbn') isbn: string) {
         const book = await this.booksService.findByISBN(isbn);
@@ -61,6 +67,9 @@ export class BooksController {
         };
     }
 
+    /**
+     * Get single book by ID (PUBLIC - no auth required)  
+     */
     @Get(':id')
     async findOne(@Param('id') id: string) {
         const book = await this.booksService.findOne(id);
@@ -71,6 +80,7 @@ export class BooksController {
     }
 
     @Patch(':id')
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
     @UseInterceptors(FileInterceptor('coverImage'))
     async update(
