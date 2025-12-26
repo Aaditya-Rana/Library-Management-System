@@ -25,7 +25,7 @@ export function BorrowRequestButton({ bookId, bookTitle, availableCopies }: Borr
 
     const handleButtonClick = () => {
         if (!isAuthenticated || !user) {
-            toast.error('Please sign in to borrow books', {
+            toast.error('Please sign in or register to borrow books', {
                 duration: 5000,
                 icon: '🔒',
             });
