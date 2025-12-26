@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { BookOpen, CheckCircle, XCircle, Clock, Search } from 'lucide-react';
 import AuthGuard from '@/components/auth/AuthGuard';
+import toast from 'react-hot-toast';
 
 export default function BorrowRequestsManagementPage() {
     const dispatch = useAppDispatch();
@@ -23,9 +24,9 @@ export default function BorrowRequestsManagementPage() {
         if (dueDate) {
             try {
                 await dispatch(approveBorrowRequest({ id, dueDate })).unwrap();
-                alert('Request approved successfully!');
+                toast.success('Request approved successfully!');
             } catch (error: any) {
-                alert(error || 'Failed to approve request');
+                toast.error(error || 'Failed to approve request');
             }
         }
     };
@@ -35,9 +36,9 @@ export default function BorrowRequestsManagementPage() {
         if (reason) {
             try {
                 await dispatch(rejectBorrowRequest({ id, reason })).unwrap();
-                alert('Request rejected');
+                toast.success('Request rejected successfully');
             } catch (error: any) {
-                alert(error || 'Failed to reject request');
+                toast.error(error || 'Failed to reject request');
             }
         }
     };

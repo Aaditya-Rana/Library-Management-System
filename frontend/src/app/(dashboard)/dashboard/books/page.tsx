@@ -18,7 +18,7 @@ export default function MyBooksPage() {
     const [showPayFineModal, setShowPayFineModal] = useState(false);
     const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(20);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
 
     useEffect(() => {
         if (user) {

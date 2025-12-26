@@ -7,6 +7,7 @@ import { fetchMyBorrowRequests, cancelBorrowRequest } from '@/features/borrowReq
 import { Button } from '@/components/ui/Button';
 import { BookOpen, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import Pagination from '@/components/Pagination';
+import toast from 'react-hot-toast';
 
 export default function MyRequestsPage() {
     const dispatch = useAppDispatch();
@@ -14,7 +15,7 @@ export default function MyRequestsPage() {
     const { borrowRequests, isLoading, pagination } = useAppSelector((state) => state.borrowRequests);
     const [statusFilter, setStatusFilter] = useState('all');
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(20);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
 
     useEffect(() => {
         if (user) {
@@ -42,8 +43,11 @@ export default function MyRequestsPage() {
     };
 
     const handleCancel = async (id: string) => {
-        if (confirm('Are you sure you want to cancel this request?')) {
-            await dispatch(cancelBorrowRequest(id));
+        try {
+            await dispatch(cancelBorrowRequest(id)).unwrap();
+            toast.success('Request cancelled successfully');
+        } catch (error: any) {
+            toast.error(error || 'Failed to cancel request');
         }
     };
 

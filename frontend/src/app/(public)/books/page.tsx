@@ -24,7 +24,7 @@ function BookListingContent() {
     });
     const [debouncedSearch, setDebouncedSearch] = useState(filters.search);
     const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page') || '1'));
-    const [itemsPerPage, setItemsPerPage] = useState(parseInt(searchParams.get('limit') || '20'));
+    const [itemsPerPage, setItemsPerPage] = useState(parseInt(searchParams.get('limit') || '10'));
 
     // Debounce search input
     useEffect(() => {
