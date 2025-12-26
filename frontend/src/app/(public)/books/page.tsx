@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useCallback } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -21,15 +21,25 @@ function BookListingContent() {
         genre: searchParams.get('genre') || '',
         availability: searchParams.get('availability') || '',
     });
+    const [debouncedSearch, setDebouncedSearch] = useState(filters.search);
+
+    // Debounce search input
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(filters.search);
+        }, 500); // 500ms delay
+
+        return () => clearTimeout(timer);
+    }, [filters.search]);
 
     useEffect(() => {
-        // Fetch books for everyone (public page)
+        // Fetch books when filters change (with debounced search)
         const params: any = {};
-        if (filters.search) params.search = filters.search;
+        if (debouncedSearch) params.search = debouncedSearch;
         if (filters.genre) params.genre = filters.genre;
         if (filters.availability) params.availability = filters.availability;
         dispatch(fetchBooks(params));
-    }, [dispatch, filters]);
+    }, [dispatch, debouncedSearch, filters.genre, filters.availability]);
 
     const handleFilterChange = (key: string, value: string) => {
         setFilters(prev => ({ ...prev, [key]: value }));
@@ -86,7 +96,8 @@ function BookListingContent() {
                                     onChange={(e) => handleFilterChange('availability', e.target.value)}
                                 >
                                     <option value="">Any Status</option>
-                                    <option value="AVAILABLE">Available Now</option>
+                                    <option value="available">Available Now</option>
+                                    <option value="unavailable">Out of Stock</option>
                                 </select>
                             </div>
                         </div>
