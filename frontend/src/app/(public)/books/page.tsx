@@ -23,16 +23,13 @@ function BookListingContent() {
     });
 
     useEffect(() => {
-        if (!isAuthenticated) return;
-
-        // Debounce or just fetch effect
+        // Fetch books for everyone (public page)
         const params: any = {};
         if (filters.search) params.search = filters.search;
         if (filters.genre) params.genre = filters.genre;
         if (filters.availability) params.availability = filters.availability;
-        // Add limit if needed
         dispatch(fetchBooks(params));
-    }, [dispatch, filters, isAuthenticated]);
+    }, [dispatch, filters]);
 
     const handleFilterChange = (key: string, value: string) => {
         setFilters(prev => ({ ...prev, [key]: value }));
@@ -106,15 +103,6 @@ function BookListingContent() {
                                     <div className="h-3 bg-gray-200 rounded w-1/2"></div>
                                 </div>
                             ))}
-                        </div>
-                    ) : !isAuthenticated ? (
-                        <div className="text-center py-20 bg-white rounded-xl border border-gray-100">
-                            <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                            <h3 className="text-lg font-medium text-gray-900">Sign in to browse books</h3>
-                            <p className="text-gray-500 mb-4">You need to be logged in to view our collection.</p>
-                            <Link href="/login">
-                                <Button>Sign in</Button>
-                            </Link>
                         </div>
                     ) : books.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
