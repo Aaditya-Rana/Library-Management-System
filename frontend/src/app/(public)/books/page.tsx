@@ -8,10 +8,11 @@ import { fetchBooks } from '@/features/books/booksSlice';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { BookOpen, Star, Filter, Search, Loader2 } from 'lucide-react';
+import Pagination from '@/components/Pagination';
 
 function BookListingContent() {
     const dispatch = useAppDispatch();
-    const { books, isLoading } = useAppSelector((state) => state.books);
+    const { books, isLoading, pagination } = useAppSelector((state) => state.books);
     const { isAuthenticated } = useAppSelector((state) => state.auth);
 
     const searchParams = useSearchParams();
@@ -22,6 +23,8 @@ function BookListingContent() {
         availability: searchParams.get('availability') || '',
     });
     const [debouncedSearch, setDebouncedSearch] = useState(filters.search);
+    const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page') || '1'));
+    const [itemsPerPage, setItemsPerPage] = useState(parseInt(searchParams.get('limit') || '20'));
 
     // Debounce search input
     useEffect(() => {
@@ -34,15 +37,29 @@ function BookListingContent() {
 
     useEffect(() => {
         // Fetch books when filters change (with debounced search)
-        const params: any = {};
+        const params: any = {
+            page: currentPage,
+            limit: itemsPerPage,
+        };
         if (debouncedSearch) params.search = debouncedSearch;
         if (filters.genre) params.genre = filters.genre;
         if (filters.availability) params.availability = filters.availability;
         dispatch(fetchBooks(params));
-    }, [dispatch, debouncedSearch, filters.genre, filters.availability]);
+    }, [dispatch, debouncedSearch, filters.genre, filters.availability, currentPage, itemsPerPage]);
+
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleItemsPerPageChange = (limit: number) => {
+        setItemsPerPage(limit);
+        setCurrentPage(1); // Reset to first page when changing items per page
+    };
 
     const handleFilterChange = (key: string, value: string) => {
         setFilters(prev => ({ ...prev, [key]: value }));
+        setCurrentPage(1); // Reset to first page when filter changes
     };
 
     return (
@@ -161,6 +178,18 @@ function BookListingContent() {
                             <h3 className="text-lg font-medium text-gray-900">No books found</h3>
                             <p className="text-gray-500">Try adjusting your search criteria</p>
                         </div>
+                    )}
+
+                    {/* Pagination */}
+                    {pagination && pagination.totalPages > 1 && (
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={pagination.totalPages}
+                            totalItems={pagination.total}
+                            itemsPerPage={itemsPerPage}
+                            onPageChange={handlePageChange}
+                            onItemsPerPageChange={handleItemsPerPageChange}
+                        />
                     )}
                 </div>
             </div>
