@@ -77,7 +77,8 @@ export const approveBorrowRequest = createAsyncThunk(
             });
             return response.data.data;
         } catch (error: any) {
-            return rejectWithValue(error.response?.data?.message || 'Failed to approve request');
+            const message = error.response?.data?.message || error.message || 'Failed to approve request';
+            return rejectWithValue(message);
         }
     }
 );
