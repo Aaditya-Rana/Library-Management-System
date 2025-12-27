@@ -80,7 +80,12 @@ export const approveBorrowRequest = createAsyncThunk(
                 const request = requestResponse.data.data;
 
                 // Get available copies for this book
-                const copiesResponse = await api.get(`/books/${request.bookId}/copies`);
+                const bookId = request.bookId || request.book?.id;
+                if (!bookId) {
+                    throw new Error('Book ID not found in request');
+                }
+
+                const copiesResponse = await api.get(`/books/${bookId}/copies`);
                 const availableCopy = copiesResponse.data.data.copies.find((copy: any) => copy.status === 'AVAILABLE');
 
                 if (!availableCopy) {
