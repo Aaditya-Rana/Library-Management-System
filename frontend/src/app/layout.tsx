@@ -30,8 +30,10 @@ export const metadata: Metadata = {
   metadataBase: new URL('http://localhost:3001'),
   icons: {
     icon: [
-      { url: '/favicon.png', sizes: 'any' },
+      { url: '/favicon.png', type: 'image/png', sizes: '32x32' },
+      { url: '/favicon.png', type: 'image/png', sizes: '16x16' },
     ],
+    shortcut: '/favicon.png',
     apple: '/favicon.png',
   },
   openGraph: {
