@@ -25,6 +25,8 @@ export default function BorrowRequestsManagementPage() {
             try {
                 await dispatch(approveBorrowRequest({ id, dueDate })).unwrap();
                 toast.success('Request approved successfully!');
+                // Refetch the requests to update the list
+                dispatch(fetchAllBorrowRequests({ status: statusFilter, limit: 100 }));
             } catch (error: any) {
                 toast.error(error || 'Failed to approve request');
             }
@@ -37,6 +39,8 @@ export default function BorrowRequestsManagementPage() {
             try {
                 await dispatch(rejectBorrowRequest({ id, reason })).unwrap();
                 toast.success('Request rejected successfully');
+                // Refetch the requests to update the list
+                dispatch(fetchAllBorrowRequests({ status: statusFilter, limit: 100 }));
             } catch (error: any) {
                 toast.error(error || 'Failed to reject request');
             }
