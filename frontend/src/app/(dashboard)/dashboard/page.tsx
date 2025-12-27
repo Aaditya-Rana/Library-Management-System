@@ -24,12 +24,19 @@ export default function DashboardPage() {
         const fetchStats = async () => {
             if (!user) return;
             try {
-                // Fetch user specific stats. Using users/me or similar
-                const response = await api.get('/users/me');
-                // Assuming response.data.data.user.stats exists as per docs
-                setStats(response.data.data.user.stats);
+                // Fetch user stats from transactions endpoint
+                const response = await api.get(`/users/${user.id}/stats`);
+                setStats(response.data.data || response.data);
             } catch (error) {
                 console.error('Failed to fetch dashboard stats', error);
+                // Set default stats if fetch fails
+                setStats({
+                    totalBorrowed: 0,
+                    currentlyBorrowed: 0,
+                    overdueBooks: 0,
+                    totalFinesPaid: 0,
+                    unpaidFines: 0,
+                });
             } finally {
                 setIsLoading(false);
             }
