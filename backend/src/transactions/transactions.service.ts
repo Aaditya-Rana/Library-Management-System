@@ -826,7 +826,7 @@ export class TransactionsService {
     }
 
     async approveBorrowRequest(requestId: string, dto: any, librarianId: string) {
-        const { bookCopyId, dueDate, notes } = dto;
+        let { bookCopyId, dueDate, notes } = dto;
 
         // Find the borrow request
         const borrowRequest = await this.prisma.borrowRequest.findUnique({
@@ -843,6 +843,22 @@ export class TransactionsService {
 
         if (borrowRequest.status !== 'PENDING') {
             throw new BadRequestException('Only pending requests can be approved');
+        }
+
+        // If no bookCopyId provided, auto-select an available copy
+        if (!bookCopyId) {
+            const availableCopy = await this.prisma.bookCopy.findFirst({
+                where: {
+                    bookId: borrowRequest.bookId,
+                    status: 'AVAILABLE',
+                },
+            });
+
+            if (!availableCopy) {
+                throw new BadRequestException('No available copies for this book');
+            }
+
+            bookCopyId = availableCopy.id;
         }
 
         // Validate book copy
