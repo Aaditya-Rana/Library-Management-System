@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAppSelector } from '@/store/hooks';
 import api from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { CheckCircle } from 'lucide-react';
 
 export default function RegisterPage() {
     const [formData, setFormData] = useState({
@@ -20,6 +22,7 @@ export default function RegisterPage() {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
     const router = useRouter();
+    const { isAuthenticated, user } = useAppSelector((state) => state.auth);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -54,6 +57,46 @@ export default function RegisterPage() {
                     <Button onClick={() => router.push('/login')} variant="outline" className="mt-4">
                         Go to Login
                     </Button>
+                </div>
+            </div>
+        );
+    }
+
+    // If user is already logged in, show message
+    if (isAuthenticated && user) {
+        const dashboardPath = user.role === 'ADMIN' || user.role === 'SUPER_ADMIN'
+            ? '/dashboard/admin'
+            : user.role === 'LIBRARIAN'
+                ? '/dashboard/librarian'
+                : '/dashboard';
+
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+                    <div className="text-center">
+                        <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
+                            <CheckCircle className="h-10 w-10 text-green-600" />
+                        </div>
+                        <h2 className="text-3xl font-extrabold text-gray-900">Already Logged In</h2>
+                        <p className="mt-4 text-gray-600">
+                            You're currently signed in as <span className="font-semibold">{user.email}</span>
+                        </p>
+                    </div>
+                    <div className="space-y-3">
+                        <Button
+                            onClick={() => router.push(dashboardPath)}
+                            className="w-full"
+                        >
+                            Go to Dashboard
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={() => router.push('/')}
+                            className="w-full"
+                        >
+                            Go to Home
+                        </Button>
+                    </div>
                 </div>
             </div>
         );
