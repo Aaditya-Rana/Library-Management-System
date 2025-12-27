@@ -244,6 +244,123 @@ describe('Books E2E Tests', () => {
         });
     });
 
+    describe('POST /books/bulk-import - Bulk Import Books', () => {
+        it('should bulk import books as admin', async () => {
+            const response = await request(app.getHttpServer())
+                .post('/books/bulk-import')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send({
+                    books: [
+                        {
+                            isbn: '9999999995',
+                            title: 'Bulk Import Book 1',
+                            author: 'Test Author',
+                            category: 'Fiction',
+                            genre: 'Scifi',
+                            bookValue: 500,
+                        },
+                        {
+                            isbn: '9999999996',
+                            title: 'Bulk Import Book 2',
+                            author: 'Test Author 2',
+                            category: 'Non-Fiction',
+                            genre: 'History',
+                            bookValue: 450,
+                        },
+                    ],
+                });
+
+            expect(response.status).toBe(201);
+            expect(response.body.success).toBe(true);
+            expect(response.body.data.imported).toBe(2);
+            expect(response.body.data.failed).toBe(0);
+            expect(response.body.data.successfulBooks).toHaveLength(2);
+        });
+
+        it('should handle partial failures in bulk import', async () => {
+            const response = await request(app.getHttpServer())
+                .post('/books/bulk-import')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send({
+                    books: [
+                        {
+                            isbn: '9999999997',
+                            title: 'New Book',
+                            author: 'Author',
+                            category: 'Fiction',
+                            genre: 'Mystery',
+                            bookValue: 400,
+                        },
+                        {
+                            isbn: '9999999995', // Duplicate ISBN
+                            title: 'Duplicate',
+                            author: 'Author',
+                            category: 'Fiction',
+                            genre: 'Mystery',
+                            bookValue: 400,
+                        },
+                    ],
+                });
+
+            expect(response.status).toBe(201);
+            expect(response.body.data.imported).toBe(1);
+            expect(response.body.data.failed).toBe(1);
+            expect(response.body.data.failedBooks[0].error).toContain('already exists');
+        });
+
+        it('should bulk import as librarian', async () => {
+            const response = await request(app.getHttpServer())
+                .post('/books/bulk-import')
+                .set('Authorization', `Bearer ${librarianToken}`)
+                .send({
+                    books: [
+                        {
+                            isbn: '9999999998',
+                            title: 'Librarian Bulk Book',
+                            author: 'Test Author',
+                            category: 'Fiction',
+                            genre: 'Romance',
+                            bookValue: 350,
+                        },
+                    ],
+                });
+
+            expect(response.status).toBe(201);
+            expect(response.body.success).toBe(true);
+        });
+
+        it('should fail bulk import as regular user', async () => {
+            const response = await request(app.getHttpServer())
+                .post('/books/bulk-import')
+                .set('Authorization', `Bearer ${userToken}`)
+                .send({
+                    books: [
+                        {
+                            isbn: '9999999999',
+                            title: 'User Book',
+                            author: 'Test',
+                            category: 'Fiction',
+                            genre: 'Mystery',
+                            bookValue: 300,
+                        },
+                    ],
+                });
+
+            expect(response.status).toBe(403);
+        });
+
+        it('should validate bulk import request', async () => {
+            const response = await request(app.getHttpServer())
+                .post('/books/bulk-import')
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send({
+                    books: [], // Empty array
+                });
+
+            expect(response.status).toBe(400);
+        });
+    });
+
     describe('GET /books - List Books', () => {
         it('should list all books', async () => {
             const response = await request(app.getHttpServer())

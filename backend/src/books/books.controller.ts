@@ -48,6 +48,13 @@ export class BooksController {
         };
     }
 
+    @Post('bulk-import')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
+    async bulkImport(@Body() bulkImportDto: BulkImportBooksDto) {
+        return this.booksService.bulkImport(bulkImportDto.books);
+    }
+
     /**
      * Get paginated list of books (PUBLIC - no auth required)
      */
