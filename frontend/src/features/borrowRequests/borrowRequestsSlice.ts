@@ -76,7 +76,7 @@ export const approveBorrowRequest = createAsyncThunk(
 
             if (!copyId) {
                 // Get the borrow request to find the book
-                const requestResponse = await api.get(`/borrow-requests/${id}`);
+                const requestResponse = await api.get(`/transactions/requests/${id}`);
                 const request = requestResponse.data.data;
 
                 // Get available copies for this book
@@ -90,7 +90,7 @@ export const approveBorrowRequest = createAsyncThunk(
                 copyId = availableCopy.id;
             }
 
-            const response = await api.patch(`/borrow-requests/${id}/approve`, {
+            const response = await api.patch(`/transactions/requests/${id}/approve`, {
                 bookCopyId: copyId,
                 dueDate
             });
