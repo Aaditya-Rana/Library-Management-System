@@ -18,7 +18,6 @@ interface UserStats {
 export default function DashboardPage() {
     const { user } = useAppSelector((state) => state.auth);
     const [stats, setStats] = useState<UserStats | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -36,15 +35,13 @@ export default function DashboardPage() {
                     totalFinesPaid: 0,
                     unpaidFines: 0,
                 });
-            } finally {
-                setIsLoading(false);
             }
         };
 
         fetchStats();
     }, [user]);
 
-    const StatCard = ({ title, value, icon: Icon, colorClass, link }: any) => (
+    const StatCard = ({ title, value, icon: Icon, colorClass }: any) => (
         <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
             <div>
                 <p className="text-sm font-medium text-gray-500">{title}</p>
