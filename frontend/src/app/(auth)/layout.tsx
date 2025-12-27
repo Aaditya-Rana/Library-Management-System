@@ -1,3 +1,10 @@
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+    title: 'Authentication',
+    description: 'Sign in or create an account to access the Library Management System.',
+};
+
 export default function AuthLayout({
     children,
 }: {

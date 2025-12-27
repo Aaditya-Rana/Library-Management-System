@@ -1,5 +1,11 @@
+import type { Metadata } from 'next';
 import Sidebar from '@/components/layout/Sidebar';
 import AuthGuard from '@/components/auth/AuthGuard';
+
+export const metadata: Metadata = {
+    title: 'Dashboard',
+    description: 'Manage your books, borrowing requests, payments, and profile in the Library Management System.',
+};
 
 export default function DashboardLayout({
     children,
