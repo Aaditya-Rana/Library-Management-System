@@ -22,6 +22,7 @@ import { UpdateInventoryDto } from './dto/update-inventory.dto';
 import { AddBookCopiesDto } from './dto/add-book-copies.dto';
 import { UpdateBookCopyDto } from './dto/update-book-copy.dto';
 import { UpdateCopyStatusDto } from './dto/update-copy-status.dto';
+import { BulkImportBooksDto } from './dto/bulk-import-books.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';

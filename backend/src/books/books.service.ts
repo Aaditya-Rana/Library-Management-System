@@ -154,6 +154,59 @@ export class BooksService {
         return book;
     }
 
+    async bulkImport(books: CreateBookDto[]) {
+        const results = {
+            success: [] as any[],
+            failed: [] as { book: CreateBookDto; error: string }[],
+        };
+
+        for (const bookDto of books) {
+            try {
+                // Check for duplicate ISBN
+                const existingBook = await this.prisma.book.findUnique({
+                    where: { isbn: bookDto.isbn },
+                });
+
+                if (existingBook) {
+                    results.failed.push({
+                        book: bookDto,
+                        error: `Book with ISBN ${bookDto.isbn} already exists`,
+                    });
+                    continue;
+                }
+
+                // Create the book
+                const book = await this.prisma.book.create({
+                    data: {
+                        ...bookDto,
+                        totalCopies: 0,
+                        availableCopies: 0,
+                        language: bookDto.language || 'English',
+                        isActive: true,
+                    },
+                });
+
+                results.success.push(book);
+            } catch (error) {
+                results.failed.push({
+                    book: bookDto,
+                    error: error.message || 'Unknown error occurred',
+                });
+            }
+        }
+
+        return {
+            success: true,
+            message: `Bulk import completed: ${results.success.length} successful, ${results.failed.length} failed`,
+            data: {
+                imported: results.success.length,
+                failed: results.failed.length,
+                successfulBooks: results.success,
+                failedBooks: results.failed,
+            },
+        };
+    }
+
     async update(id: string, updateBookDto: UpdateBookDto, coverImage?: Express.Multer.File) {
         // Check if book exists
         const existingBook = await this.findOne(id);
