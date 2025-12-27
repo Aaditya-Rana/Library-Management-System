@@ -674,13 +674,15 @@ describe('UsersService', () => {
                 _sum: { lateFee: 150 },
             });
 
-            const stats = await service.getUserStats('1');
+            const result = await service.getUserStats('1');
 
-            expect(stats).toEqual({
+            expect(result.success).toBe(true);
+            expect(result.data).toEqual({
                 totalBorrowed: 10,
                 currentlyBorrowed: 2,
                 overdueBooks: 1,
                 totalFinesPaid: 150,
+                unpaidFines: 0,
             });
         });
 
@@ -694,9 +696,10 @@ describe('UsersService', () => {
                 _sum: { lateFee: null },
             });
 
-            const stats = await service.getUserStats('1');
+            const result = await service.getUserStats('1');
 
-            expect(stats.totalFinesPaid).toBe(0);
+            expect(result.success).toBe(true);
+            expect(result.data.totalFinesPaid).toBe(0);
         });
     });
 });
