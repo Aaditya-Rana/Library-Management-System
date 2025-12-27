@@ -97,6 +97,7 @@ export class BooksController {
     }
 
     @Delete(':id')
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async remove(@Param('id') id: string) {
@@ -171,6 +172,7 @@ export class BooksController {
     }
 
     @Post(':id/copies')
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
     async addCopies(
         @Param('id') id: string,
@@ -180,12 +182,14 @@ export class BooksController {
     }
 
     @Get(':id/copies')
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
     async getBookCopies(@Param('id') id: string) {
         return this.booksService.getBookCopies(id);
     }
 
     @Get(':bookId/copies/:copyId')
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
     async getBookCopyById(
         @Param('bookId') bookId: string,
@@ -195,6 +199,7 @@ export class BooksController {
     }
 
     @Patch(':bookId/copies/:copyId')
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
     async updateBookCopy(
         @Param('bookId') bookId: string,
@@ -205,6 +210,7 @@ export class BooksController {
     }
 
     @Patch(':bookId/copies/:copyId/status')
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN, UserRole.LIBRARIAN)
     async updateCopyStatus(
         @Param('bookId') bookId: string,
@@ -215,6 +221,7 @@ export class BooksController {
     }
 
     @Delete(':bookId/copies/:copyId')
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN)
     @HttpCode(HttpStatus.OK)
     async deleteBookCopy(
