@@ -79,7 +79,7 @@ export default function RegisterPage() {
                         </div>
                         <h2 className="text-3xl font-extrabold text-gray-900">Already Logged In</h2>
                         <p className="mt-4 text-gray-600">
-                            You're currently signed in as <span className="font-semibold">{user.email}</span>
+                            You&apos;re currently signed in as <span className="font-semibold">{user.email}</span>
                         </p>
                     </div>
                     <div className="space-y-3">
@@ -107,9 +107,9 @@ export default function RegisterPage() {
             <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg border border-gray-100">
                 <div className="text-center">
                     <h2 className="mt-2 text-3xl font-extrabold text-gray-900">Create your account</h2>
-                    <p className="mt-2 text-sm text-gray-600">
+                    <p className="mt-2 text-center text-sm text-gray-600">
                         Already have an account?{' '}
-                        <Link href="/login" className="font-medium text-primary-600 hover:text-primary-500 transition-colors">
+                        <Link href="/login" className="font-medium text-primary-600 hover:text-primary-500">
                             Sign in
                         </Link>
                     </p>

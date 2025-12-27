@@ -60,7 +60,7 @@ export default function BorrowRequestsManagementPage() {
             <div className="space-y-6">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Borrow Requests</h1>
-                    <p className="text-gray-600">Manage user book requests</p>
+                    <p className="text-gray-600">Manage students&apos; book borrowing requests</p>
                 </div>
 
                 {error && (

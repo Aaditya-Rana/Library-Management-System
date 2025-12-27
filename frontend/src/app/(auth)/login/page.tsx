@@ -65,7 +65,7 @@ export default function LoginPage() {
                         </div>
                         <h2 className="text-3xl font-extrabold text-gray-900">Already Logged In</h2>
                         <p className="mt-4 text-gray-600">
-                            You're currently signed in as <span className="font-semibold">{user.email}</span>
+                            You&apos;re currently signed in as <span className="font-semibold">{user.email}</span>
                         </p>
                     </div>
                     <div className="space-y-3">
@@ -93,10 +93,10 @@ export default function LoginPage() {
             <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg border border-gray-100">
                 <div className="text-center">
                     <h2 className="mt-2 text-3xl font-extrabold text-gray-900">Sign in to your account</h2>
-                    <p className="mt-2 text-sm text-gray-600">
-                        Or{' '}
-                        <Link href="/register" className="font-medium text-primary-600 hover:text-primary-500 transition-colors">
-                            create a new account
+                    <p className="mt-2 text-center text-sm text-gray-600">
+                        Don&apos;t have an account?{' '}
+                        <Link href="/register" className="font-medium text-primary-600 hover:text-primary-500">
+                            Sign up
                         </Link>
                     </p>
                 </div>
