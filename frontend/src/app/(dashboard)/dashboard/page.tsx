@@ -21,16 +21,27 @@ export default function DashboardPage() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // TODO: Implement proper user stats endpoint in backend
-        // For now, set default stats to avoid 404 errors
-        setStats({
-            totalBorrowed: 0,
-            currentlyBorrowed: 0,
-            overdueBooks: 0,
-            totalFinesPaid: 0,
-            unpaidFines: 0,
-        });
-        setIsLoading(false);
+        const fetchStats = async () => {
+            if (!user) return;
+            try {
+                const response = await api.get(`/users/${user.id}/stats`);
+                setStats(response.data.data);
+            } catch (error) {
+                console.error('Failed to fetch dashboard stats', error);
+                // Set default stats if fetch fails
+                setStats({
+                    totalBorrowed: 0,
+                    currentlyBorrowed: 0,
+                    overdueBooks: 0,
+                    totalFinesPaid: 0,
+                    unpaidFines: 0,
+                });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchStats();
     }, [user]);
 
     const StatCard = ({ title, value, icon: Icon, colorClass, link }: any) => (
