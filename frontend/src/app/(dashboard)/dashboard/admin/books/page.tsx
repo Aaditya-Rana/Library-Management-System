@@ -8,11 +8,14 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Plus, Search, Edit2, Trash2, Copy, Upload } from 'lucide-react';
 import AuthGuard from '@/components/auth/AuthGuard';
+import BulkImportModal from '@/components/BulkImportModal';
+import toast from 'react-hot-toast';
 
 export default function AdminBooksPage() {
     const dispatch = useAppDispatch();
     const { books, isLoading } = useAppSelector((state) => state.books);
     const [search, setSearch] = useState('');
+    const [showBulkImport, setShowBulkImport] = useState(false);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -23,8 +26,17 @@ export default function AdminBooksPage() {
 
     const handleDelete = async (id: string) => {
         if (confirm('Are you sure you want to delete this book?')) {
-            await dispatch(deleteBook(id));
+            try {
+                await dispatch(deleteBook(id)).unwrap();
+                toast.success('Book deleted successfully');
+            } catch (error: any) {
+                toast.error(error || 'Failed to delete book');
+            }
         }
+    };
+
+    const handleBulkImportSuccess = () => {
+        dispatch(fetchBooks({ search, limit: 50 }));
     };
 
     return (
@@ -36,12 +48,10 @@ export default function AdminBooksPage() {
                         <p className="text-gray-600">Add, edit, or remove books from territory.</p>
                     </div>
                     <div className="flex gap-2">
-                        <Link href="/dashboard/admin/books/import">
-                            <Button variant="outline">
-                                <Upload className="w-4 h-4 mr-2" />
-                                Import
-                            </Button>
-                        </Link>
+                        <Button variant="outline" onClick={() => setShowBulkImport(true)}>
+                            <Upload className="w-4 h-4 mr-2" />
+                            Bulk Import
+                        </Button>
                         <Link href="/dashboard/admin/books/add">
                             <Button>
                                 <Plus className="w-4 h-4 mr-2" />
@@ -115,6 +125,12 @@ export default function AdminBooksPage() {
                     )}
                 </div>
             </div>
+
+            <BulkImportModal
+                isOpen={showBulkImport}
+                onClose={() => setShowBulkImport(false)}
+                onSuccess={handleBulkImportSuccess}
+            />
         </AuthGuard>
     );
 }
