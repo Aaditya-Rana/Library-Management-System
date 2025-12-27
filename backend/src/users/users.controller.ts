@@ -10,6 +10,7 @@ import {
     UseGuards,
     HttpCode,
     HttpStatus,
+    ForbiddenException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -103,6 +104,25 @@ export class UsersController {
         @GetUser('role') requestingUserRole: UserRole,
     ) {
         return this.usersService.remove(id, requestingUserId, requestingUserRole);
+    }
+
+    @Get(':id/stats')
+    @HttpCode(HttpStatus.OK)
+    async getUserStats(
+        @Param('id') id: string,
+        @GetUser('id') requestingUserId: string,
+        @GetUser('role') role: UserRole,
+    ) {
+        // Users can only view their own stats, admins/librarians can view any
+        if (
+            role !== UserRole.SUPER_ADMIN &&
+            role !== UserRole.ADMIN &&
+            role !== UserRole.LIBRARIAN &&
+            id !== requestingUserId
+        ) {
+            throw new ForbiddenException('You can only view your own statistics');
+        }
+        return this.usersService.getUserStats(id);
     }
 
     @Post(':id/approve')
