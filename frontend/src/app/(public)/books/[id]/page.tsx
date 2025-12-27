@@ -88,20 +88,11 @@ export default function BookDetailsPage({ params }: { params: Promise<{ id: stri
                         </div>
 
                         <div className="mt-6 space-y-3">
-                            {isAuthenticated ? (
-                                <BorrowRequestButton
-                                    bookId={book.id}
-                                    bookTitle={book.title}
-                                    availableCopies={book.availableCopies}
-                                />
-                            ) : (
-                                <div className="text-center p-4 bg-gray-50 rounded-lg">
-                                    <p className="text-sm text-gray-600 mb-2">Sign in to borrow this book</p>
-                                    <Button variant="outline" className="w-full" onClick={() => router.push('/login')}>
-                                        Sign In
-                                    </Button>
-                                </div>
-                            )}
+                            <BorrowRequestButton
+                                bookId={book.id}
+                                bookTitle={book.title}
+                                availableCopies={book.availableCopies}
+                            />
                         </div>
                     </div>
 
