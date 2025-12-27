@@ -15,6 +15,18 @@ interface UserStats {
     unpaidFines: number; // Assuming API provides this
 }
 
+const StatCard = ({ title, value, icon: Icon, colorClass }: any) => (
+    <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+        <div>
+            <p className="text-sm font-medium text-gray-500">{title}</p>
+            <p className={`text-2xl font-bold mt-1 ${colorClass}`}>{value ?? '-'}</p>
+        </div>
+        <div className={`p-3 rounded-lg ${colorClass.replace('text-', 'bg-').replace('700', '50').replace('600', '50')}`}>
+            <Icon className={`w-6 h-6 ${colorClass}`} />
+        </div>
+    </div>
+);
+
 export default function DashboardPage() {
     const { user } = useAppSelector((state) => state.auth);
     const [stats, setStats] = useState<UserStats | null>(null);
@@ -40,18 +52,6 @@ export default function DashboardPage() {
 
         fetchStats();
     }, [user]);
-
-    const StatCard = ({ title, value, icon: Icon, colorClass }: any) => (
-        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
-            <div>
-                <p className="text-sm font-medium text-gray-500">{title}</p>
-                <p className={`text-2xl font-bold mt-1 ${colorClass}`}>{value ?? '-'}</p>
-            </div>
-            <div className={`p-3 rounded-lg ${colorClass.replace('text-', 'bg-').replace('700', '50').replace('600', '50')}`}>
-                <Icon className={`w-6 h-6 ${colorClass}`} />
-            </div>
-        </div>
-    );
 
     return (
         <div className="space-y-8">
