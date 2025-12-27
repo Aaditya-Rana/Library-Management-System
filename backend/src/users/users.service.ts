@@ -451,10 +451,14 @@ export class UsersService {
             ]);
 
         return {
-            totalBorrowed,
-            currentlyBorrowed,
-            overdueBooks,
-            totalFinesPaid: payments._sum.lateFee || 0,
+            success: true,
+            data: {
+                totalBorrowed,
+                currentlyBorrowed,
+                overdueBooks,
+                totalFinesPaid: payments._sum.lateFee || 0,
+                unpaidFines: 0, // TODO: Calculate from current overdue transactions
+            },
         };
     }
 }
