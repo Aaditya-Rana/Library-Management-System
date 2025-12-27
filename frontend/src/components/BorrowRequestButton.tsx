@@ -53,15 +53,17 @@ export function BorrowRequestButton({ bookId, bookTitle, availableCopies }: Borr
         }
     };
 
-    if (availableCopies === 0) {
-        return null;
-    }
+    const isAvailable = availableCopies > 0;
 
     return (
         <>
-            <Button onClick={handleButtonClick} className="w-full">
+            <Button
+                onClick={handleButtonClick}
+                className="w-full"
+                disabled={!isAvailable}
+            >
                 <BookPlus className="w-4 h-4 mr-2" />
-                Request to Borrow
+                {isAvailable ? 'Request to Borrow' : 'No Copies Available'}
             </Button>
 
             {isOpen && (
