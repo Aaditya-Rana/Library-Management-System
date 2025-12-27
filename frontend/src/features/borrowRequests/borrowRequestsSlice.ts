@@ -69,34 +69,10 @@ export const fetchAllBorrowRequests = createAsyncThunk(
 // Approve borrow request (LIBRARIAN/ADMIN)
 export const approveBorrowRequest = createAsyncThunk(
     'borrowRequests/approve',
-    async ({ id, dueDate, bookCopyId }: { id: string; dueDate?: string; bookCopyId?: string }, { rejectWithValue }) => {
+    async ({ id, dueDate }: { id: string; dueDate?: string }, { rejectWithValue }) => {
         try {
-            // If bookCopyId not provided, fetch available copies for this request
-            let copyId = bookCopyId;
-
-            if (!copyId) {
-                // Get the borrow request to find the book
-                const requestResponse = await api.get(`/transactions/requests/${id}`);
-                const request = requestResponse.data.data;
-
-                // Get available copies for this book
-                const bookId = request.bookId || request.book?.id;
-                if (!bookId) {
-                    throw new Error('Book ID not found in request');
-                }
-
-                const copiesResponse = await api.get(`/books/${bookId}/copies`);
-                const availableCopy = copiesResponse.data.data.copies.find((copy: any) => copy.status === 'AVAILABLE');
-
-                if (!availableCopy) {
-                    throw new Error('No available copies for this book');
-                }
-
-                copyId = availableCopy.id;
-            }
-
-            const response = await api.patch(`/transactions/requests/${id}/approve`, {
-                bookCopyId: copyId,
+            // Backend will auto-select an available copy
+            const response = await api.post(`/transactions/requests/${id}/approve`, {
                 dueDate
             });
             return response.data.data;
