@@ -826,7 +826,8 @@ export class TransactionsService {
     }
 
     async approveBorrowRequest(requestId: string, dto: any, librarianId: string) {
-        let { bookCopyId, dueDate, notes } = dto;
+        let { bookCopyId } = dto;
+        const { dueDate, notes } = dto;
 
         // Find the borrow request
         const borrowRequest = await this.prisma.borrowRequest.findUnique({

@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsOptional, IsUUID, IsDateString, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsUUID, IsDateString, MaxLength } from 'class-validator';
 
 export class ApproveBorrowRequestDto {
     @IsOptional()
