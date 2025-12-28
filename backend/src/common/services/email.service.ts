@@ -19,8 +19,19 @@ export class EmailService {
     });
   }
 
+  // Helper method to get the first frontend URL from CORS_ORIGIN
+  private getFrontendUrl(): string {
+    const corsOrigin = this.configService.get('CORS_ORIGIN');
+    if (corsOrigin) {
+      // Split by comma and get the first URL, trim whitespace
+      const firstUrl = corsOrigin.split(',')[0].trim();
+      return firstUrl;
+    }
+    return 'http://localhost:3001'; // Fallback
+  }
+
   async sendVerificationEmail(email: string, token: string, name: string) {
-    const verificationUrl = `${this.configService.get('FRONTEND_URL') || 'http://localhost:3001'}/verify-email?token=${token}`;
+    const verificationUrl = `${this.getFrontendUrl()}/verify-email?token=${token}`;
 
     const mailOptions = {
       from: this.configService.get('SMTP_FROM'),
@@ -39,7 +50,7 @@ export class EmailService {
   }
 
   async sendPasswordResetEmail(email: string, token: string, name: string) {
-    const resetUrl = `${this.configService.get('FRONTEND_URL') || 'http://localhost:3001'}/reset-password?token=${token}`;
+    const resetUrl = `${this.getFrontendUrl()}/reset-password?token=${token}`;
 
     const mailOptions = {
       from: this.configService.get('SMTP_FROM'),
