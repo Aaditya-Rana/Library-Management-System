@@ -1,0 +1,313 @@
+{
+    "info": {
+        "name": "Library Management - Borrow Requests",
+        "description": "Borrow Request System APIs - User-initiated book borrowing with librarian approval workflow",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Create Borrow Request",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "if (pm.response.code === 201) {",
+                            "    const response = pm.response.json();",
+                            "    pm.environment.set('borrowRequestId', response.data.borrowRequest.id);",
+                            "    pm.test('Status code is 201', () => pm.response.to.have.status(201));",
+                            "    pm.test('Request created successfully', () => {",
+                            "        pm.expect(response.success).to.be.true;",
+                            "        pm.expect(response.data.borrowRequest.status).to.equal('PENDING');",
+                            "    });",
+                            "}"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{userToken}}",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"bookId\": \"{{bookId}}\",\n  \"notes\": \"Need this book for research project\"\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/transactions/request",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "transactions",
+                        "request"
+                    ]
+                },
+                "description": "User creates a borrow request for a book"
+            },
+            "response": []
+        },
+        {
+            "name": "List All Borrow Requests (Librarian)",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                            "pm.test('Returns array of requests', () => {",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    pm.expect(response.data.borrowRequests).to.be.an('array');",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{librarianToken}}",
+                        "type": "text"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/transactions/requests?page=1&limit=20&status=PENDING",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "transactions",
+                        "requests"
+                    ],
+                    "query": [
+                        {
+                            "key": "page",
+                            "value": "1"
+                        },
+                        {
+                            "key": "limit",
+                            "value": "20"
+                        },
+                        {
+                            "key": "status",
+                            "value": "PENDING"
+                        }
+                    ]
+                },
+                "description": "Librarian/Admin lists all borrow requests with filtering"
+            },
+            "response": []
+        },
+        {
+            "name": "Get My Borrow Requests",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                            "pm.test('Returns user requests', () => {",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    pm.expect(response.data.borrowRequests).to.be.an('array');",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{userToken}}",
+                        "type": "text"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/transactions/requests/my",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "transactions",
+                        "requests",
+                        "my"
+                    ]
+                },
+                "description": "User views their own borrow requests"
+            },
+            "response": []
+        },
+        {
+            "name": "Approve Borrow Request",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                            "pm.test('Request approved and book issued', () => {",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    pm.expect(response.data.borrowRequest.status).to.equal('FULFILLED');",
+                            "    pm.expect(response.data.transaction).to.exist;",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{librarianToken}}",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"bookCopyId\": \"{{bookCopyId}}\",\n  \"dueDate\": \"2026-01-15T23:59:59Z\",\n  \"notes\": \"Approved - extended period granted\"\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/transactions/requests/{{borrowRequestId}}/approve",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "transactions",
+                        "requests",
+                        "{{borrowRequestId}}",
+                        "approve"
+                    ]
+                },
+                "description": "Librarian approves request and auto-issues the book"
+            },
+            "response": []
+        },
+        {
+            "name": "Reject Borrow Request",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                            "pm.test('Request rejected', () => {",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    pm.expect(response.data.borrowRequest.status).to.equal('REJECTED');",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{librarianToken}}",
+                        "type": "text"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"rejectionReason\": \"Book is reserved for another user\"\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/transactions/requests/{{borrowRequestId}}/reject",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "transactions",
+                        "requests",
+                        "{{borrowRequestId}}",
+                        "reject"
+                    ]
+                },
+                "description": "Librarian rejects request with a reason"
+            },
+            "response": []
+        },
+        {
+            "name": "Cancel Borrow Request",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                            "pm.test('Request cancelled', () => {",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    pm.expect(response.data.borrowRequest.status).to.equal('CANCELLED');",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "DELETE",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{userToken}}",
+                        "type": "text"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/transactions/requests/{{borrowRequestId}}",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "transactions",
+                        "requests",
+                        "{{borrowRequestId}}"
+                    ]
+                },
+                "description": "User cancels their own pending request"
+            },
+            "response": []
+        }
+    ],
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:3000",
+            "type": "string"
+        }
+    ]
+}

@@ -1,0 +1,406 @@
+{
+    "info": {
+        "name": "Library Management - Reports & Analytics",
+        "description": "Comprehensive analytics and reporting endpoints for library management system. Includes dashboard statistics, user analytics, book circulation metrics, and financial reports.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Dashboard Statistics",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                            "pm.test('Response has dashboard data', () => {",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    pm.expect(response.data.overview).to.exist;",
+                            "    pm.expect(response.data.financial).to.exist;",
+                            "    pm.expect(response.data.today).to.exist;",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{adminToken}}",
+                        "type": "text"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/reports/dashboard",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "reports",
+                        "dashboard"
+                    ]
+                },
+                "description": "Get overall library dashboard statistics including books, users, transactions, and financial metrics"
+            },
+            "response": []
+        },
+        {
+            "name": "Active Users Report",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                            "pm.test('Returns active users list', () => {",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    pm.expect(response.data.users).to.be.an('array');",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{librarianToken}}",
+                        "type": "text"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/reports/users/active?limit=10&startDate=2024-01-01&endDate=2024-12-31",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "reports",
+                        "users",
+                        "active"
+                    ],
+                    "query": [
+                        {
+                            "key": "limit",
+                            "value": "10"
+                        },
+                        {
+                            "key": "startDate",
+                            "value": "2024-01-01"
+                        },
+                        {
+                            "key": "endDate",
+                            "value": "2024-12-31"
+                        }
+                    ]
+                },
+                "description": "Get most active users based on transaction count with optional date range filtering"
+            },
+            "response": []
+        },
+        {
+            "name": "Overdue Users List",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                            "pm.test('Returns overdue users', () => {",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    pm.expect(response.data.overdueUsers).to.be.an('array');",
+                            "    pm.expect(response.data.totalOverdueCount).to.be.a('number');",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{adminToken}}",
+                        "type": "text"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/reports/users/overdue",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "reports",
+                        "users",
+                        "overdue"
+                    ]
+                },
+                "description": "Get list of users with overdue books including days overdue and fine amounts"
+            },
+            "response": []
+        },
+        {
+            "name": "Popular Books Report",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                            "pm.test('Returns popular books', () => {",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    pm.expect(response.data.books).to.be.an('array');",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{librarianToken}}",
+                        "type": "text"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/reports/books/popular?limit=5&category=Fiction",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "reports",
+                        "books",
+                        "popular"
+                    ],
+                    "query": [
+                        {
+                            "key": "limit",
+                            "value": "5"
+                        },
+                        {
+                            "key": "category",
+                            "value": "Fiction"
+                        }
+                    ]
+                },
+                "description": "Get most borrowed books with optional category/genre filtering"
+            },
+            "response": []
+        },
+        {
+            "name": "Low Circulation Books",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                            "pm.test('Returns low circulation books', () => {",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    pm.expect(response.data.books).to.be.an('array');",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{adminToken}}",
+                        "type": "text"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/reports/books/low-circulation?limit=10",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "reports",
+                        "books",
+                        "low-circulation"
+                    ],
+                    "query": [
+                        {
+                            "key": "limit",
+                            "value": "10"
+                        }
+                    ]
+                },
+                "description": "Get least borrowed books to identify underutilized inventory"
+            },
+            "response": []
+        },
+        {
+            "name": "Category Distribution",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                            "pm.test('Returns category distribution', () => {",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    pm.expect(response.data.categories).to.be.an('array');",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{librarianToken}}",
+                        "type": "text"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/reports/books/categories",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "reports",
+                        "books",
+                        "categories"
+                    ]
+                },
+                "description": "Get book inventory distribution across categories"
+            },
+            "response": []
+        },
+        {
+            "name": "Circulation Statistics",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                            "pm.test('Returns circulation data', () => {",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    pm.expect(response.data.circulation).to.be.an('array');",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{adminToken}}",
+                        "type": "text"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/reports/circulation?groupBy=month&startDate=2024-01-01",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "reports",
+                        "circulation"
+                    ],
+                    "query": [
+                        {
+                            "key": "groupBy",
+                            "value": "month"
+                        },
+                        {
+                            "key": "startDate",
+                            "value": "2024-01-01"
+                        }
+                    ]
+                },
+                "description": "Get circulation trends grouped by day/week/month/year"
+            },
+            "response": []
+        },
+        {
+            "name": "Financial Summary (Admin Only)",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                            "pm.test('Returns financial summary', () => {",
+                            "    const response = pm.response.json();",
+                            "    pm.expect(response.success).to.be.true;",
+                            "    pm.expect(response.data.totalRevenue).to.exist;",
+                            "    pm.expect(response.data.totalFinesCollected).to.exist;",
+                            "    pm.expect(response.data.pendingFines).to.exist;",
+                            "    pm.expect(response.data.paymentsByMethod).to.be.an('array');",
+                            "});"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{adminToken}}",
+                        "type": "text"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/reports/financial/summary?startDate=2024-01-01&endDate=2024-12-31",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "reports",
+                        "financial",
+                        "summary"
+                    ],
+                    "query": [
+                        {
+                            "key": "startDate",
+                            "value": "2024-01-01"
+                        },
+                        {
+                            "key": "endDate",
+                            "value": "2024-12-31"
+                        }
+                    ]
+                },
+                "description": "Get financial summary including revenue, fines, and payment method breakdown (Admin only)"
+            },
+            "response": []
+        }
+    ],
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:3000",
+            "type": "string"
+        }
+    ]
+}
