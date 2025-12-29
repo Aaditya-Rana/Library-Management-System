@@ -40,7 +40,9 @@ export default function BorrowRequestsManagementPage() {
             // Refetch the requests to update the list
             dispatch(fetchAllBorrowRequests({ status: statusFilter, limit: 100 }));
         } catch (error: any) {
-            toast.error(error || 'Failed to approve request');
+            const errorMessage = typeof error === 'string' ? error : error?.message || 'Failed to approve request';
+            console.log("Approval error:", error, "Type:", typeof error);
+            toast.error(errorMessage);
         }
     };
 
@@ -53,7 +55,8 @@ export default function BorrowRequestsManagementPage() {
                 // Refetch the requests to update the list
                 dispatch(fetchAllBorrowRequests({ status: statusFilter, limit: 100 }));
             } catch (error: any) {
-                toast.error(error || 'Failed to reject request');
+                const errorMessage = typeof error === 'string' ? error : error?.message || 'Failed to reject request';
+                toast.error(errorMessage);
             }
         }
     };

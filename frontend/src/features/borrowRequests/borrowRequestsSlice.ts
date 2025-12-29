@@ -169,16 +169,16 @@ const borrowRequestsSlice = createSlice({
             })
             // Approve Request
             .addCase(approveBorrowRequest.fulfilled, (state, action) => {
-                const index = state.borrowRequests.findIndex(r => r.id === action.payload.data.id);
+                const index = state.borrowRequests.findIndex(r => r.id === action.payload.id);
                 if (index !== -1) {
-                    state.borrowRequests[index] = action.payload.data;
+                    state.borrowRequests[index] = action.payload;
                 }
             })
             // Reject Request
             .addCase(rejectBorrowRequest.fulfilled, (state, action) => {
-                const index = state.borrowRequests.findIndex(r => r.id === action.payload.data.id);
+                const index = state.borrowRequests.findIndex(r => r.id === action.payload.id);
                 if (index !== -1) {
-                    state.borrowRequests[index] = action.payload.data;
+                    state.borrowRequests[index] = action.payload;
                 }
             })
             // Cancel Request
