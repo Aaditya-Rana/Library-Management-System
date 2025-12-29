@@ -1,4 +1,8 @@
 import { PrismaClient, SettingCategory, SettingDataType } from '@prisma/client';
+import * as dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 const prisma = new PrismaClient();
 
@@ -152,7 +156,7 @@ async function seedSettings() {
 
 seedSettings()
     .catch((e) => {
-        console.error('Error seeding settings:', e);
+        console.error('Error seeding settings:', error);
         process.exit(1);
     })
     .finally(async () => {
