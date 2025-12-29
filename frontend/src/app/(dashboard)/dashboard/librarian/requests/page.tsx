@@ -21,7 +21,7 @@ export default function BorrowRequestsManagementPage() {
 
     useEffect(() => {
         dispatch(fetchAllBorrowRequests({ status: statusFilter, limit: 100 }));
-        dispatch(fetchSettings()); // Fetch settings for default loan period
+        dispatch(fetchSettings({})); // Fetch settings for default loan period
     }, [dispatch, statusFilter]);
 
     const handleApproveClick = (request: any) => {
