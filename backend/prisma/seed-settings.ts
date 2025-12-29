@@ -156,7 +156,7 @@ async function seedSettings() {
 
 seedSettings()
     .catch((e) => {
-        console.error('Error seeding settings:', error);
+        console.e('Error seeding settings:', error);
         process.exit(1);
     })
     .finally(async () => {
