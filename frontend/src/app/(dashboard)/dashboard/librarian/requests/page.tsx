@@ -3,10 +3,12 @@
 import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchAllBorrowRequests, approveBorrowRequest, rejectBorrowRequest } from '@/features/borrowRequests/borrowRequestsSlice';
+import { fetchSettings } from '@/features/settings/settingsSlice';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { BookOpen, CheckCircle, XCircle, Clock, Search } from 'lucide-react';
 import AuthGuard from '@/components/auth/AuthGuard';
+import ApproveBorrowRequestModal from '@/components/modals/ApproveBorrowRequestModal';
 import toast from 'react-hot-toast';
 
 export default function BorrowRequestsManagementPage() {
@@ -14,22 +16,31 @@ export default function BorrowRequestsManagementPage() {
     const { borrowRequests, isLoading, error } = useAppSelector((state) => state.borrowRequests);
     const [statusFilter, setStatusFilter] = useState('PENDING');
     const [searchTerm, setSearchTerm] = useState('');
+    const [approveModalOpen, setApproveModalOpen] = useState(false);
+    const [selectedRequest, setSelectedRequest] = useState<any>(null);
 
     useEffect(() => {
         dispatch(fetchAllBorrowRequests({ status: statusFilter, limit: 100 }));
+        dispatch(fetchSettings()); // Fetch settings for default loan period
     }, [dispatch, statusFilter]);
 
-    const handleApprove = async (id: string) => {
-        const dueDate = prompt('Enter due date (YYYY-MM-DD):');
-        if (dueDate) {
-            try {
-                await dispatch(approveBorrowRequest({ id, dueDate })).unwrap();
-                toast.success('Request approved successfully!');
-                // Refetch the requests to update the list
-                dispatch(fetchAllBorrowRequests({ status: statusFilter, limit: 100 }));
-            } catch (error: any) {
-                toast.error(error || 'Failed to approve request');
-            }
+    const handleApproveClick = (request: any) => {
+        setSelectedRequest(request);
+        setApproveModalOpen(true);
+    };
+
+    const handleApproveSubmit = async (dueDate: string) => {
+        if (!selectedRequest) return;
+
+        try {
+            await dispatch(approveBorrowRequest({ id: selectedRequest.id, dueDate })).unwrap();
+            toast.success('✅ Borrow request approved successfully!');
+            setApproveModalOpen(false);
+            setSelectedRequest(null);
+            // Refetch the requests to update the list
+            dispatch(fetchAllBorrowRequests({ status: statusFilter, limit: 100 }));
+        } catch (error: any) {
+            toast.error(error || 'Failed to approve request');
         }
     };
 
@@ -145,7 +156,7 @@ export default function BorrowRequestsManagementPage() {
                                                     <div className="flex justify-end gap-2">
                                                         <Button
                                                             size="sm"
-                                                            onClick={() => handleApprove(request.id)}
+                                                            onClick={() => handleApproveClick(request)}
                                                         >
                                                             <CheckCircle className="w-4 h-4 mr-1" />
                                                             Approve
@@ -174,6 +185,18 @@ export default function BorrowRequestsManagementPage() {
                     )}
                 </div>
             </div>
+
+            {/* Approve Modal */}
+            {selectedRequest && (
+                <ApproveBorrowRequestModal
+                    isOpen={approveModalOpen}
+                    onClose={() => { setApproveModalOpen(false); setSelectedRequest(null); }}
+                    onApprove={handleApproveSubmit}
+                    requestId={selectedRequest.id}
+                    bookTitle={selectedRequest.book?.title || 'Unknown Book'}
+                    userName={`${selectedRequest.user?.firstName || ''} ${selectedRequest.user?.lastName || ''}`.trim()}
+                />
+            )}
         </AuthGuard>
     );
 }
