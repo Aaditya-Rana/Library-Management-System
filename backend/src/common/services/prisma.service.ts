@@ -11,12 +11,14 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         const connectionString = process.env.DATABASE_URL;
 
         // Create connection pool with limits
+        // In production (Serverless), use strictly 1 connection per instance to avoid exhausting DB limits
+        const isProduction = process.env.NODE_ENV === 'production';
         const pool = new Pool({
             connectionString,
-            max: 5, // Limit to 5 connections for Aiven free tier
-            min: 1, // Keep at least 1 connection open
-            idleTimeoutMillis: 30000, // Close idle connections after 30 seconds
-            connectionTimeoutMillis: 10000, // Timeout if connection takes > 10 seconds
+            max: isProduction ? 1 : 5,
+            min: 0, // Allow scaling down to 0
+            idleTimeoutMillis: 30000,
+            connectionTimeoutMillis: 10000,
         });
 
         const adapter = new PrismaPg(pool);

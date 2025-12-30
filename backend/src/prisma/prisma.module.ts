@@ -5,11 +5,14 @@ import { Pool } from 'pg';
 
 // Create a single connection pool that will be reused
 const connectionString = process.env.DATABASE_URL;
+const isProduction = process.env.NODE_ENV === 'production';
+
 const pool = new Pool({
     connectionString,
-    max: 10, // Maximum number of clients in the pool
-    idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-    connectionTimeoutMillis: 10000, // Return an error after 10 seconds if connection can't be established
+    max: isProduction ? 1 : 10, // Strict limit for Serverless
+    min: 0,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
 });
 
 const adapter = new PrismaPg(pool);
