@@ -3,6 +3,7 @@ import { TransactionsService } from './transactions.service';
 import { PrismaService } from '../common/services/prisma.service';
 import { BooksService } from '../books/books.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { SettingsService } from '../settings/settings.service';
 import {
     NotFoundException,
     BadRequestException,
@@ -115,6 +116,24 @@ describe('TransactionsService', () => {
                 {
                     provide: NotificationsService,
                     useValue: mockNotificationsService,
+                },
+                {
+                    provide: SettingsService,
+                    useValue: {
+                        getSetting: jest.fn().mockImplementation((key) => {
+                            const settings = {
+                                'loans.default_period_days': '14',
+                                'loans.max_books_per_user': '5',
+                                'loans.max_renewals': '2',
+                                'fines.per_day_amount': '5',
+                                'fines.grace_period_days': '1',
+                                'fines.max_fine_amount': '500',
+                            };
+                            return Promise.resolve({
+                                data: { setting: { value: settings[key] || '0' } }
+                            });
+                        }),
+                    },
                 },
             ],
         }).compile();

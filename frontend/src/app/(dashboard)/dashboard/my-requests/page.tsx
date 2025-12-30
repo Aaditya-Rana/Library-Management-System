@@ -1,36 +1,26 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { fetchMyBorrowRequests, cancelBorrowRequest } from '@/features/borrowRequests/borrowRequestsSlice';
+import { useGetMyBorrowRequestsQuery, useCancelBorrowRequestMutation } from '@/features/borrowRequests/borrowRequestsApi';
 import { Button } from '@/components/ui/Button';
-import { BookOpen, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { BookOpen, Clock, CheckCircle, XCircle, AlertCircle, Loader2 } from 'lucide-react';
 import Pagination from '@/components/Pagination';
 import toast from 'react-hot-toast';
 
 export default function MyRequestsPage() {
-    const dispatch = useAppDispatch();
-    const { user } = useAppSelector((state) => state.auth);
-    const { borrowRequests, isLoading, pagination } = useAppSelector((state) => state.borrowRequests);
-    const [statusFilter, setStatusFilter] = useState('all');
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
 
-    useEffect(() => {
-        if (user) {
-            dispatch(fetchMyBorrowRequests({
-                userId: user.id,
-                page: currentPage,
-                limit: itemsPerPage
-            }));
-        }
-    }, [dispatch, user, currentPage, itemsPerPage]);
+    const { data, isLoading } = useGetMyBorrowRequestsQuery({
+        page: currentPage,
+        limit: itemsPerPage
+    });
 
-    const handleStatusFilterChange = (status: string) => {
-        setStatusFilter(status);
-        setCurrentPage(1); // Reset to first page when filter changes
-    };
+    const [cancelRequest] = useCancelBorrowRequestMutation();
+
+    const borrowRequests = data?.data?.borrowRequests || [];
+    const pagination = data?.data?.pagination;
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
@@ -44,10 +34,10 @@ export default function MyRequestsPage() {
 
     const handleCancel = async (id: string) => {
         try {
-            await dispatch(cancelBorrowRequest(id)).unwrap();
+            await cancelRequest(id).unwrap();
             toast.success('Request cancelled successfully');
         } catch (error: any) {
-            toast.error(error || 'Failed to cancel request');
+            toast.error(error?.data?.message || 'Failed to cancel request');
         }
     };
 
@@ -94,7 +84,10 @@ export default function MyRequestsPage() {
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 {isLoading ? (
-                    <div className="p-8 text-center text-gray-500">Loading your requests...</div>
+                    <div className="p-12 text-center text-gray-500 flex flex-col items-center">
+                        <Loader2 className="w-8 h-8 animate-spin text-primary-500 mb-2" />
+                        <p>Loading your requests...</p>
+                    </div>
                 ) : borrowRequests.length > 0 ? (
                     <div className="divide-y divide-gray-100">
                         {borrowRequests.map((request) => (

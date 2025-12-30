@@ -1,17 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAppSelector, useAppDispatch } from '@/store/hooks'; // Assuming dispatch is needed for updates
-import api from '@/services/api'; // For update API calls
+import { useGetMeQuery, useUpdateMeMutation } from '@/features/users/usersApi';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { User } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function ProfilePage() {
-    const dispatch = useAppDispatch();
-    const { user } = useAppSelector((state) => state.auth);
+    const { data: userData, isLoading } = useGetMeQuery();
+    const [updateMe, { isLoading: isSaving }] = useUpdateMeMutation();
     const [isEditing, setIsEditing] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
+
+    const user = userData?.data?.user;
+
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
@@ -20,37 +22,30 @@ export default function ProfilePage() {
 
     useEffect(() => {
         if (user) {
-            setFormData({
-                firstName: user.firstName,
-                lastName: user.lastName,
-                phone: user.phone || ''
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setFormData(prev => {
+                if (prev.firstName === user.firstName &&
+                    prev.lastName === user.lastName &&
+                    prev.phone === (user.phone || '')) {
+                    return prev;
+                }
+                return {
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    phone: user.phone || ''
+                };
             });
         }
-    }, [user]);
+    }, [user?.firstName, user?.lastName, user?.phone]);
 
     const handleSave = async () => {
-        setIsSaving(true);
         try {
-            const response = await api.patch('/users/me', formData);
-            // We need to update the redux state with new user data
-            // Since we don't have a specific 'updateUser' action yet, 
-            // we might need to rely on re-fetching or manually updating local storage/state if the auth slice allows it.
-            // For now, let's just alert success and maybe reload to be safe or just toggle view.
-
-            // Ideally: dispatch(setCredentials({ ...authData, user: response.data.data.user }));
-            // But let's assume valid token persists.
-
-            // Updating LocalStorage manually to keep consistency on refresh
-            const updatedUser = response.data.data.user;
-            localStorage.setItem('user', JSON.stringify(updatedUser));
-
-            alert('Profile updated successfully! Please refresh to see changes fully applied.');
+            await updateMe(formData).unwrap();
+            toast.success('Profile updated successfully!');
             setIsEditing(false);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to update profile', error);
-            alert('Failed to update profile');
-        } finally {
-            setIsSaving(false);
+            toast.error(error?.data?.message || 'Failed to update profile');
         }
     };
 
@@ -65,7 +60,8 @@ export default function ProfilePage() {
         setIsEditing(false);
     };
 
-    if (!user) return null;
+    if (isLoading) return <div className="p-8 text-center text-gray-500">Loading profile...</div>;
+    if (!user) return <div className="p-8 text-center text-red-500">Failed to load profile.</div>;
 
     return (
         <div className="max-w-2xl mx-auto space-y-8">

@@ -67,4 +67,11 @@ export class ReportsController {
     async getFinancialSummary(@Query() queryDto: QueryReportsDto) {
         return this.reportsService.getFinancialSummary(queryDto);
     }
+
+    @Get('revenue')
+    @Roles(UserRole.ADMIN)
+    @HttpCode(HttpStatus.OK)
+    async getRevenueReport(@Query() queryDto: QueryReportsDto) {
+        return this.reportsService.getRevenueReport(queryDto);
+    }
 }

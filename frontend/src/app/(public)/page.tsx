@@ -1,41 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
-import api from '@/services/api';
 import { ArrowRight, BookOpen, Search, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
-
-interface Book {
-  id: string;
-  title: string;
-  author: string;
-  coverImageUrl?: string;
-  averageRating?: number;
-}
-import { useAppSelector } from '@/store/hooks';
+import { useGetBooksQuery } from '@/features/books/booksApi';
 
 export default function HomePage() {
-  const [popularBooks, setPopularBooks] = useState<Book[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
-
-  useEffect(() => {
-    const fetchPopularBooks = async () => {
-      try {
-        // Fetch books for everyone (public home page)
-        const response = await api.get('/books?limit=4');
-        setPopularBooks(response.data.data || []);
-      } catch (error) {
-        console.error('Failed to fetch books', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchPopularBooks();
-  }, []);
+  const { data, isLoading } = useGetBooksQuery({ limit: 4 });
+  const popularBooks = data?.data || [];
 
   return (
     <div className="space-y-20 pb-20">
@@ -114,9 +87,9 @@ export default function HomePage() {
               <Link key={book.id} href={`/books/${book.id}`}>
                 <div className="group relative bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden hover:-translate-y-1">
                   <div className="aspect-[2/3] relative bg-gray-100 overflow-hidden">
-                    {book.coverImageUrl ? (
+                    {book.coverImage ? (
                       <img
-                        src={book.coverImageUrl}
+                        src={book.coverImage}
                         alt={book.title}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                       />
@@ -134,7 +107,7 @@ export default function HomePage() {
                     <p className="text-sm text-gray-500 truncate">{book.author}</p>
                     <div className="mt-2 flex items-center text-amber-500 text-sm">
                       <Star className="w-4 h-4 fill-current mr-1" />
-                      <span>{book.averageRating || 4.5}</span>
+                      <span>4.5</span>
                     </div>
                   </div>
                 </div>

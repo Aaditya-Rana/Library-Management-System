@@ -1,42 +1,54 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { fetchBooks, deleteBook } from '@/features/books/booksSlice';
+import { useGetBooksQuery, useDeleteBookMutation } from '@/features/books/booksApi';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Plus, Search, Edit2, Trash2, Copy, Upload } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Search, Edit2, Trash2, Copy, Upload } from 'lucide-react';
 import AuthGuard from '@/components/auth/AuthGuard';
 import BulkImportModal from '@/components/BulkImportModal';
 import toast from 'react-hot-toast';
 
 export default function AdminBooksPage() {
-    const dispatch = useAppDispatch();
-    const { books, isLoading } = useAppSelector((state) => state.books);
+    const [page, setPage] = useState(1);
     const [search, setSearch] = useState('');
+    const [searchDebounced, setSearchDebounced] = useState('');
     const [showBulkImport, setShowBulkImport] = useState(false);
 
+    // Debounce search input
     useEffect(() => {
         const timer = setTimeout(() => {
-            dispatch(fetchBooks({ search, limit: 50 }));
+            setSearchDebounced(search);
+            setPage(1); // Reset page on search
         }, 500);
         return () => clearTimeout(timer);
-    }, [search, dispatch]);
+    }, [search]);
+
+    // RTK Query hooks
+    const { data, isLoading, refetch } = useGetBooksQuery({
+        search: searchDebounced,
+        page,
+        limit: 10
+    });
+
+    const [deleteBook] = useDeleteBookMutation();
+
+    const books = data?.data || [];
 
     const handleDelete = async (id: string) => {
         if (confirm('Are you sure you want to delete this book?')) {
             try {
-                await dispatch(deleteBook(id)).unwrap();
+                await deleteBook(id).unwrap();
                 toast.success('Book deleted successfully');
             } catch (error: any) {
-                toast.error(error || 'Failed to delete book');
+                toast.error(error?.data?.message || 'Failed to delete book');
             }
         }
     };
 
     const handleBulkImportSuccess = () => {
-        dispatch(fetchBooks({ search, limit: 50 }));
+        refetch(); // Manually refetch after bulk import since it might be outside RTK Query cache invalidation
     };
 
     return (
@@ -122,6 +134,59 @@ export default function AdminBooksPage() {
                                 ))}
                             </tbody>
                         </table>
+                    )}
+
+                    {/* Pagination Controls */}
+                    {data?.meta && data.meta.totalPages > 1 && (
+                        <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+                            <div className="flex flex-1 justify-between sm:hidden">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setPage(Math.max(1, page - 1))}
+                                    disabled={page === 1}
+                                >
+                                    Previous
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setPage(Math.min(data.meta.totalPages, page + 1))}
+                                    disabled={page === data.meta.totalPages}
+                                >
+                                    Next
+                                </Button>
+                            </div>
+                            <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                                <div>
+                                    <p className="text-sm text-gray-700">
+                                        Showing <span className="font-medium">{(page - 1) * 10 + 1}</span> to <span className="font-medium">{Math.min(page * 10, data.meta.total)}</span> of{' '}
+                                        <span className="font-medium">{data.meta.total}</span> results
+                                    </p>
+                                </div>
+                                <div>
+                                    <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                                        <button
+                                            onClick={() => setPage(Math.max(1, page - 1))}
+                                            disabled={page === 1}
+                                            className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            <span className="sr-only">Previous</span>
+                                            <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+                                        </button>
+                                        <span className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 focus:outline-offset-0">
+                                            Page {page} of {data.meta.totalPages}
+                                        </span>
+                                        <button
+                                            onClick={() => setPage(Math.min(data.meta.totalPages, page + 1))}
+                                            disabled={page === data.meta.totalPages}
+                                            className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            <span className="sr-only">Next</span>
+                                            <ChevronRight className="h-5 w-5" aria-hidden="true" />
+                                        </button>
+                                    </nav>
+                                </div>
+                            </div>
+                        </div>
                     )}
                 </div>
             </div>

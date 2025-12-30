@@ -1,18 +1,15 @@
 'use client';
 
-import { useState, useEffect, Suspense, useCallback } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { fetchBooks } from '@/features/books/booksSlice';
-import { Button } from '@/components/ui/Button';
+import { useSearchParams } from 'next/navigation';
+import { useAppSelector } from '@/store/hooks';
+import { useGetBooksQuery } from '@/features/books/booksApi';
 import { Input } from '@/components/ui/Input';
-import { BookOpen, Star, Filter, Search, Loader2 } from 'lucide-react';
+import { BookOpen, Star, Filter, Search } from 'lucide-react';
 import Pagination from '@/components/Pagination';
 
 function BookListingContent() {
-    const dispatch = useAppDispatch();
-    const { books, isLoading, pagination } = useAppSelector((state) => state.books);
     const { isAuthenticated } = useAppSelector((state) => state.auth);
 
     const searchParams = useSearchParams();
@@ -35,17 +32,16 @@ function BookListingContent() {
         return () => clearTimeout(timer);
     }, [filters.search]);
 
-    useEffect(() => {
-        // Fetch books when filters change (with debounced search)
-        const params: any = {
-            page: currentPage,
-            limit: itemsPerPage,
-        };
-        if (debouncedSearch) params.search = debouncedSearch;
-        if (filters.genre) params.genre = filters.genre;
-        if (filters.availability) params.availability = filters.availability;
-        dispatch(fetchBooks(params));
-    }, [dispatch, debouncedSearch, filters.genre, filters.availability, currentPage, itemsPerPage]);
+    const { data, isLoading } = useGetBooksQuery({
+        page: currentPage,
+        limit: itemsPerPage,
+        search: debouncedSearch || undefined,
+        genre: filters.genre || undefined,
+        availability: filters.availability || undefined,
+    });
+
+    const books = data?.data || [];
+    const pagination = data?.meta;
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
@@ -67,7 +63,7 @@ function BookListingContent() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900">Browse Books</h1>
-                    <p className="text-gray-600 mt-1">Found {books.length} results</p>
+                    <p className="text-gray-600 mt-1">Found {pagination?.total || 0} results</p>
                 </div>
             </div>
 

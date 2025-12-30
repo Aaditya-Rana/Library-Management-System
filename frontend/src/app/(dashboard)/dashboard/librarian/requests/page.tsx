@@ -1,66 +1,75 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { fetchAllBorrowRequests, approveBorrowRequest, rejectBorrowRequest } from '@/features/borrowRequests/borrowRequestsSlice';
-import { fetchSettings } from '@/features/settings/settingsSlice';
+import { useGetAllBorrowRequestsQuery, useApproveBorrowRequestMutation, useRejectBorrowRequestMutation } from '@/features/borrowRequests/borrowRequestsApi';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { BookOpen, CheckCircle, XCircle, Clock, Search } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Search } from 'lucide-react';
 import AuthGuard from '@/components/auth/AuthGuard';
 import ApproveBorrowRequestModal from '@/components/modals/ApproveBorrowRequestModal';
+import RejectionModal from '@/components/modals/RejectionModal';
 import toast from 'react-hot-toast';
+import { BorrowRequest } from '@/types';
 
 export default function BorrowRequestsManagementPage() {
-    const dispatch = useAppDispatch();
-    const { borrowRequests, isLoading, error } = useAppSelector((state) => state.borrowRequests);
     const [statusFilter, setStatusFilter] = useState('PENDING');
     const [searchTerm, setSearchTerm] = useState('');
+
+    // Modal states
     const [approveModalOpen, setApproveModalOpen] = useState(false);
-    const [selectedRequest, setSelectedRequest] = useState<any>(null);
+    const [rejectModalOpen, setRejectModalOpen] = useState(false);
+    const [selectedRequest, setSelectedRequest] = useState<BorrowRequest | null>(null);
 
-    useEffect(() => {
-        dispatch(fetchAllBorrowRequests({ status: statusFilter, limit: 100 }));
-        dispatch(fetchSettings({})); // Fetch settings for default loan period
-    }, [dispatch, statusFilter]);
+    // RTK Query hooks
+    const { data, isLoading, error } = useGetAllBorrowRequestsQuery({
+        status: statusFilter,
+        limit: 100
+    });
 
-    const handleApproveClick = (request: any) => {
+    const [approveBorrowRequest] = useApproveBorrowRequestMutation();
+    const [rejectBorrowRequest, { isLoading: isRejecting }] = useRejectBorrowRequestMutation();
+
+    const borrowRequests = data?.data?.borrowRequests || [];
+
+    const handleApproveClick = (request: BorrowRequest) => {
         setSelectedRequest(request);
         setApproveModalOpen(true);
+    };
+
+    const handleRejectClick = (request: BorrowRequest) => {
+        setSelectedRequest(request);
+        setRejectModalOpen(true);
     };
 
     const handleApproveSubmit = async (dueDate: string) => {
         if (!selectedRequest) return;
 
         try {
-            await dispatch(approveBorrowRequest({ id: selectedRequest.id, dueDate })).unwrap();
+            await approveBorrowRequest({ id: selectedRequest.id, dueDate }).unwrap();
             toast.success('✅ Borrow request approved successfully!');
             setApproveModalOpen(false);
             setSelectedRequest(null);
-            // Refetch the requests to update the list
-            dispatch(fetchAllBorrowRequests({ status: statusFilter, limit: 100 }));
         } catch (error: any) {
-            const errorMessage = typeof error === 'string' ? error : error?.message || 'Failed to approve request';
-            console.log("Approval error:", error, "Type:", typeof error);
+            const errorMessage = error?.data?.message || 'Failed to approve request';
             toast.error(errorMessage);
         }
     };
 
-    const handleReject = async (id: string) => {
-        const reason = prompt('Enter rejection reason:');
-        if (reason) {
-            try {
-                await dispatch(rejectBorrowRequest({ id, reason })).unwrap();
-                toast.success('Request rejected successfully');
-                // Refetch the requests to update the list
-                dispatch(fetchAllBorrowRequests({ status: statusFilter, limit: 100 }));
-            } catch (error: any) {
-                const errorMessage = typeof error === 'string' ? error : error?.message || 'Failed to reject request';
-                toast.error(errorMessage);
-            }
+    const handleRejectSubmit = async (reason: string) => {
+        if (!selectedRequest) return;
+
+        try {
+            await rejectBorrowRequest({ id: selectedRequest.id, reason }).unwrap();
+            toast.success('Request rejected successfully');
+            setRejectModalOpen(false);
+            setSelectedRequest(null);
+        } catch (error: any) {
+            const errorMessage = error?.data?.message || 'Failed to reject request';
+            toast.error(errorMessage);
         }
     };
 
+    // Filter locally for search
     const filteredRequests = borrowRequests.filter(request =>
         request.book?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         request.user?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -79,7 +88,7 @@ export default function BorrowRequestsManagementPage() {
 
                 {error && (
                     <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
-                        {error}
+                        Error loading requests.
                     </div>
                 )}
 
@@ -95,6 +104,7 @@ export default function BorrowRequestsManagementPage() {
                     </div>
                 </div>
 
+                {/* Tabs */}
                 <div className="border-b border-gray-200">
                     <nav className="-mb-px flex space-x-8">
                         {statusTabs.map((status) => (
@@ -114,7 +124,10 @@ export default function BorrowRequestsManagementPage() {
 
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                     {isLoading ? (
-                        <div className="p-8 text-center text-gray-500">Loading requests...</div>
+                        <div className="p-12 text-center text-gray-500 flex flex-col items-center">
+                            <Clock className="w-8 h-8 animate-spin text-primary-500 mb-2" />
+                            Loading requests...
+                        </div>
                     ) : filteredRequests.length > 0 ? (
                         <div className="overflow-x-auto">
                             <table className="min-w-full divide-y divide-gray-200">
@@ -167,7 +180,7 @@ export default function BorrowRequestsManagementPage() {
                                                         <Button
                                                             size="sm"
                                                             variant="outline"
-                                                            onClick={() => handleReject(request.id)}
+                                                            onClick={() => handleRejectClick(request)}
                                                         >
                                                             <XCircle className="w-4 h-4 mr-1" />
                                                             Reject
@@ -187,19 +200,28 @@ export default function BorrowRequestsManagementPage() {
                         </div>
                     )}
                 </div>
-            </div>
 
-            {/* Approve Modal */}
-            {selectedRequest && (
-                <ApproveBorrowRequestModal
-                    isOpen={approveModalOpen}
-                    onClose={() => { setApproveModalOpen(false); setSelectedRequest(null); }}
-                    onApprove={handleApproveSubmit}
-                    requestId={selectedRequest.id}
-                    bookTitle={selectedRequest.book?.title || 'Unknown Book'}
-                    userName={`${selectedRequest.user?.firstName || ''} ${selectedRequest.user?.lastName || ''}`.trim()}
+                {/* Approve Modal */}
+                {selectedRequest && (
+                    <ApproveBorrowRequestModal
+                        isOpen={approveModalOpen}
+                        onClose={() => { setApproveModalOpen(false); setSelectedRequest(null); }}
+                        onApprove={handleApproveSubmit}
+                        requestId={selectedRequest.id}
+                        bookTitle={selectedRequest.book?.title || 'Unknown Book'}
+                        userName={`${selectedRequest.user?.firstName || ''} ${selectedRequest.user?.lastName || ''}`.trim()}
+                    />
+                )}
+
+                {/* Reject Modal */}
+                <RejectionModal
+                    isOpen={rejectModalOpen}
+                    onClose={() => { setRejectModalOpen(false); setSelectedRequest(null); }}
+                    onConfirm={handleRejectSubmit}
+                    isLoading={isRejecting}
+                    title="Reject Borrow Request"
                 />
-            )}
+            </div>
         </AuthGuard>
     );
 }

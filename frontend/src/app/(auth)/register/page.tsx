@@ -8,35 +8,51 @@ import api from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { CheckCircle } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+
+const registerSchema = z.object({
+    firstName: z.string().min(2, 'First name must be at least 2 characters'),
+    lastName: z.string().min(2, 'Last name must be at least 2 characters'),
+    email: z.string().email('Please enter a valid email address'),
+    password: z.string().min(8, 'Password must be at least 8 characters'),
+    phone: z.string().min(10, 'Phone number must be at least 10 digits'),
+    dateOfBirth: z.string().min(1, 'Date of birth is required'),
+});
+
+type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
-    const [formData, setFormData] = useState({
-        firstName: '',
-        lastName: '',
-        email: '',
-        password: '',
-        phone: '',
-        dateOfBirth: '',
-    });
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
     const router = useRouter();
     const { isAuthenticated, user } = useAppSelector((state) => state.auth);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm<RegisterFormData>({
+        resolver: zodResolver(registerSchema) as any,
+        defaultValues: {
+            firstName: '',
+            lastName: '',
+            email: '',
+            password: '',
+            phone: '',
+            dateOfBirth: '',
+        },
+    });
 
-    const handleRegister = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleRegister = async (data: RegisterFormData) => {
         setIsLoading(true);
         setError(null);
 
         try {
-            await api.post('/auth/register', formData);
+            await api.post('/auth/register', data);
             setSuccess(true);
-            // Optional: Redirect after delay
             setTimeout(() => router.push('/login'), 3000);
         } catch (err: any) {
             setError(err.response?.data?.message || 'Failed to register. Please try again.');
@@ -114,70 +130,56 @@ export default function RegisterPage() {
                         </Link>
                     </p>
                 </div>
-                <form className="mt-8 space-y-6" onSubmit={handleRegister}>
+                <form className="mt-8 space-y-6" onSubmit={handleSubmit(handleRegister)}>
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                             <Input
                                 id="firstName"
-                                name="firstName"
-                                type="text"
-                                required
                                 label="First Name"
                                 placeholder="John"
-                                value={formData.firstName}
-                                onChange={handleChange}
+                                {...register('firstName')}
+                                error={errors.firstName?.message}
                             />
                             <Input
                                 id="lastName"
-                                name="lastName"
-                                type="text"
-                                required
                                 label="Last Name"
                                 placeholder="Doe"
-                                value={formData.lastName}
-                                onChange={handleChange}
+                                {...register('lastName')}
+                                error={errors.lastName?.message}
                             />
                         </div>
                         <Input
                             id="email"
-                            name="email"
                             type="email"
                             autoComplete="email"
-                            required
                             label="Email address"
                             placeholder="you@example.com"
-                            value={formData.email}
-                            onChange={handleChange}
+                            {...register('email')}
+                            error={errors.email?.message}
                         />
                         <Input
                             id="phone"
-                            name="phone"
                             type="tel"
-                            required
                             label="Phone Number"
                             placeholder="+91..."
-                            value={formData.phone}
-                            onChange={handleChange}
+                            {...register('phone')}
+                            error={errors.phone?.message}
                         />
                         <Input
                             id="dateOfBirth"
-                            name="dateOfBirth"
                             type="date"
-                            required
                             label="Date of Birth"
-                            value={formData.dateOfBirth}
-                            onChange={handleChange}
+                            {...register('dateOfBirth')}
+                            error={errors.dateOfBirth?.message}
                         />
                         <Input
                             id="password"
-                            name="password"
                             type="password"
                             autoComplete="new-password"
-                            required
                             label="Password"
                             placeholder="••••••••"
-                            value={formData.password}
-                            onChange={handleChange}
+                            {...register('password')}
+                            error={errors.password?.message}
                         />
                     </div>
 

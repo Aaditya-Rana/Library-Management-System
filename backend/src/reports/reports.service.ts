@@ -445,4 +445,71 @@ export class ReportsService {
             },
         };
     }
+    async getRevenueReport(queryDto: QueryReportsDto) {
+        const { startDate, endDate, groupBy = GroupByPeriod.MONTH } = queryDto;
+
+        const where: any = {
+            paymentStatus: 'COMPLETED',
+        };
+        if (startDate || endDate) {
+            where.paymentDate = {};
+            if (startDate) where.paymentDate.gte = new Date(startDate);
+            if (endDate) where.paymentDate.lte = new Date(endDate);
+        }
+
+        const payments = await this.prisma.payment.findMany({
+            where,
+            select: {
+                paymentDate: true,
+                amount: true,
+            },
+            orderBy: { paymentDate: 'asc' },
+        });
+
+        // Group by period
+        const revenueMap = new Map();
+
+        payments.forEach((payment) => {
+            if (!payment.paymentDate) return;
+
+            const date = new Date(payment.paymentDate);
+            let key: string;
+
+            switch (groupBy) {
+                case GroupByPeriod.DAY:
+                    key = date.toISOString().split('T')[0];
+                    break;
+                case GroupByPeriod.WEEK: {
+                    const weekStart = new Date(date);
+                    weekStart.setDate(date.getDate() - date.getDay());
+                    key = weekStart.toISOString().split('T')[0];
+                    break;
+                }
+                case GroupByPeriod.MONTH:
+                    key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`;
+                    break;
+                case GroupByPeriod.YEAR:
+                    key = `${date.getFullYear()}-01-01`;
+                    break;
+                default:
+                    key = date.toISOString().split('T')[0];
+            }
+
+            if (!revenueMap.has(key)) {
+                revenueMap.set(key, 0);
+            }
+            revenueMap.set(key, revenueMap.get(key) + payment.amount);
+        });
+
+        const revenueData = Array.from(revenueMap.entries())
+            .map(([date, amount]) => ({ date, amount }))
+            .sort((a, b) => a.date.localeCompare(b.date));
+
+        return {
+            success: true,
+            data: {
+                revenue: revenueData,
+            },
+        };
+    }
 }

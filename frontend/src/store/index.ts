@@ -1,30 +1,32 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from '../features/auth/authSlice';
-import transactionsReducer from '../features/transactions/transactionsSlice';
 import booksReducer from '../features/books/booksSlice';
+import transactionsReducer from '../features/transactions/transactionsSlice';
 import borrowRequestsReducer from '../features/borrowRequests/borrowRequestsSlice';
 import notificationsReducer from '../features/notifications/notificationsSlice';
-import paymentsReducer from '../features/payments/paymentsSlice';
 import settingsReducer from '../features/settings/settingsSlice';
 import reportsReducer from '../features/reports/reportsSlice';
+import { apiSlice } from '../services/apiSlice';
 
 export const store = configureStore({
     reducer: {
         auth: authReducer,
-        transactions: transactionsReducer,
         books: booksReducer,
+        transactions: transactionsReducer,
         borrowRequests: borrowRequestsReducer,
         notifications: notificationsReducer,
-        payments: paymentsReducer,
         settings: settingsReducer,
         reports: reportsReducer,
+        [apiSlice.reducerPath]: apiSlice.reducer, // Add RTK Query reducer
     },
-    devTools: process.env.NODE_ENV !== 'production',
+    middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(apiSlice.middleware), // Add RTK Query middleware
 });
 
-// Inject store into api to avoid circular dependency
-import { injectStore } from '../services/api';
-injectStore(store);
-
+// Export types first to avoid circular dependency issues
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
+
+// Inject store into api to avoid circular dependency - do this last
+import { injectStore } from '../services/api';
+injectStore(store);

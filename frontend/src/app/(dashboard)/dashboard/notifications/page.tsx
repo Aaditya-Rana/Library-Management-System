@@ -1,25 +1,85 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { fetchNotifications, markAsRead, markAllAsRead } from '@/features/notifications/notificationsSlice';
+import { useRouter } from 'next/navigation';
+import {
+    useGetNotificationsQuery,
+    useMarkNotificationReadMutation,
+    useMarkAllNotificationsReadMutation,
+    useDeleteNotificationMutation,
+    useDeleteAllNotificationsMutation
+} from '@/features/notifications/notificationsApi';
 import { Button } from '@/components/ui/Button';
-import { Bell, Check } from 'lucide-react';
+import { Bell, Check, Trash2, Clock } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function NotificationsPage() {
-    const dispatch = useAppDispatch();
-    const { notifications, isLoading, error } = useAppSelector((state) => state.notifications);
+    const router = useRouter();
+    const { data, isLoading, error } = useGetNotificationsQuery();
+    const [markAsRead] = useMarkNotificationReadMutation();
+    const [markAllAsRead] = useMarkAllNotificationsReadMutation();
+    const [deleteNotification] = useDeleteNotificationMutation();
+    const [deleteAllNotifications] = useDeleteAllNotificationsMutation();
 
-    useEffect(() => {
-        dispatch(fetchNotifications());
-    }, [dispatch]);
+    const notifications = data?.data?.notifications || [];
 
-    const handleMarkAsRead = async (id: string) => {
-        await dispatch(markAsRead(id));
+    const handleNotificationClick = async (notification: any) => {
+        if (!notification.read) {
+            markAsRead(notification.id);
+        }
+
+        // Navigate based on category
+        switch (notification.category) {
+            case 'BOOK_ISSUED':
+            case 'BOOK_RETURNED':
+            case 'DUE_REMINDER':
+            case 'OVERDUE_NOTICE':
+                router.push('/dashboard/books');
+                break;
+            case 'BORROW_REQUEST_CREATED':
+                // For librarian
+                router.push('/dashboard/librarian/requests');
+                break;
+            case 'BORROW_REQUEST_APPROVED':
+            case 'BORROW_REQUEST_REJECTED':
+                router.push('/dashboard/my-requests');
+                break;
+            case 'FINE_NOTICE':
+            case 'PAYMENT_CONFIRMATION':
+                router.push('/dashboard/books'); // Or maybe a payments history page if exists
+                break;
+            default:
+                break;
+        }
     };
 
-    const handleMarkAllAsRead = async () => {
-        await dispatch(markAllAsRead());
+    const handleDelete = async (e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        try {
+            await deleteNotification(id).unwrap();
+            toast.success('Notification deleted');
+        } catch (error) {
+            toast.error('Failed to delete notification');
+        }
+    };
+
+    const handleClearAll = async () => {
+        if (confirm('Are you sure you want to delete all notifications?')) {
+            try {
+                await deleteAllNotifications().unwrap();
+                toast.success('All notifications cleared');
+            } catch (error) {
+                toast.error('Failed to clear notifications');
+            }
+        }
+    };
+
+    const handleMarkAllRead = async () => {
+        try {
+            await markAllAsRead().unwrap();
+            toast.success('All notifications marked as read');
+        } catch (error) {
+            toast.error('Failed to update notifications');
+        }
     };
 
     const getCategoryColor = (category: string) => {
@@ -37,21 +97,30 @@ export default function NotificationsPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center flex-wrap gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
                     <p className="text-gray-600">Stay updated with your library activity</p>
                 </div>
-                {notifications.some(n => !n.read) && (
-                    <Button onClick={handleMarkAllAsRead} variant="outline">
-                        Mark all as read
-                    </Button>
-                )}
+                <div className="flex gap-2">
+                    {notifications.length > 0 && (
+                        <Button onClick={handleClearAll} variant="danger" size="sm">
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Clear All
+                        </Button>
+                    )}
+                    {notifications.some((n: any) => !n.read) && (
+                        <Button onClick={handleMarkAllRead} variant="outline" size="sm">
+                            <Check className="w-4 h-4 mr-2" />
+                            Mark all as read
+                        </Button>
+                    )}
+                </div>
             </div>
 
             {error && (
                 <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
-                    {error}
+                    Error loading notifications
                 </div>
             )}
 
@@ -60,42 +129,46 @@ export default function NotificationsPage() {
                     <div className="p-8 text-center text-gray-500">Loading notifications...</div>
                 ) : notifications.length > 0 ? (
                     <div className="divide-y divide-gray-100">
-                        {notifications.map((notification) => (
+                        {notifications.map((notification: any) => (
                             <div
                                 key={notification.id}
-                                className={`p-6 transition-colors ${!notification.read ? 'bg-blue-50' : 'hover:bg-gray-50'
+                                onClick={() => handleNotificationClick(notification)}
+                                className={`p-6 transition-colors cursor-pointer group relative ${!notification.read ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50'
                                     }`}
                             >
                                 <div className="flex items-start justify-between gap-4">
-                                    <div className="flex-1">
+                                    <div className="flex-1 pr-8">
                                         <div className="flex items-center gap-2 mb-2">
                                             <span className={`px-2 py-1 text-xs font-medium rounded-full ${getCategoryColor(notification.category)}`}>
                                                 {notification.category.replace(/_/g, ' ')}
                                             </span>
                                             {!notification.read && (
-                                                <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                                                <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
                                             )}
                                         </div>
-                                        <h3 className="font-bold text-gray-900 mb-1">
+                                        <h3 className={`font-bold text-gray-900 mb-1 ${!notification.read ? 'text-blue-900' : ''}`}>
                                             {notification.title}
                                         </h3>
                                         <p className="text-gray-600 mb-2">
                                             {notification.message}
                                         </p>
-                                        <p className="text-sm text-gray-500">
-                                            {new Date(notification.createdAt).toLocaleString()}
-                                        </p>
+                                        <div className="flex items-center gap-4 text-sm text-gray-500">
+                                            <span className="flex items-center gap-1">
+                                                < Clock className="w-3 h-3" />
+                                                {new Date(notification.createdAt).toLocaleString()}
+                                            </span>
+                                        </div>
                                     </div>
-                                    {!notification.read && (
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => handleMarkAsRead(notification.id)}
+
+                                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                                        <button
+                                            onClick={(e) => handleDelete(e, notification.id)}
+                                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                                            title="Delete notification"
                                         >
-                                            <Check className="w-4 h-4 mr-1" />
-                                            Mark as read
-                                        </Button>
-                                    )}
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         ))}

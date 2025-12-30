@@ -72,4 +72,13 @@ export class NotificationsController {
     ) {
         return this.notificationsService.deleteNotification(id, userId, role);
     }
+
+    @Delete()
+    @HttpCode(HttpStatus.OK)
+    async deleteAllNotifications(
+        @GetUser('id') userId: string,
+        @GetUser('role') role: UserRole,
+    ) {
+        return this.notificationsService.deleteAllNotifications(userId, userId, role);
+    }
 }

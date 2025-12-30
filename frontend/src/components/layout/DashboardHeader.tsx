@@ -1,7 +1,8 @@
 'use client';
 
-import { Bell, User, LogOut, Menu } from 'lucide-react';
+import { User, LogOut, Menu } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { NotificationBell } from '@/components/NotificationBell';
 import { logout } from '@/features/auth/authSlice';
 import { useState } from 'react';
 import Link from 'next/link';
@@ -31,13 +32,7 @@ export default function DashboardHeader() {
 
             <div className="flex items-center gap-2 sm:gap-4">
                 {/* Notification Bell */}
-                <Link
-                    href="/dashboard/notifications"
-                    className="relative p-2 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                    <Bell className="w-5 h-5 text-gray-600" />
-                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-                </Link>
+                <NotificationBell />
 
                 {/* User Menu */}
                 <div className="relative">

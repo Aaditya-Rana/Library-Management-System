@@ -1,49 +1,58 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { fetchUserHistory, payFine } from '@/features/transactions/transactionsSlice';
+import { useAppSelector } from '@/store/hooks';
+import { useGetUserTransactionsQuery, usePayFineMutation, useRenewBookMutation } from '@/features/transactions/transactionsApi';
 import { Button } from '@/components/ui/Button';
-import { BookOpen, Clock, AlertTriangle } from 'lucide-react';
-import api from '@/services/api';
+import { BookOpen, Clock, AlertTriangle, Loader2 } from 'lucide-react';
 import PayFineModal from '@/components/PayFineModal';
 import toast from 'react-hot-toast';
 import Pagination from '@/components/Pagination';
 
 export default function MyBooksPage() {
     const { user } = useAppSelector((state) => state.auth);
-    const { transactions, isLoading, pagination } = useAppSelector((state) => state.transactions);
-    const dispatch = useAppDispatch();
     const [showPayFineModal, setShowPayFineModal] = useState(false);
     const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
 
-    useEffect(() => {
-        if (user) {
-            dispatch(fetchUserHistory({
-                userId: user.id,
-                page: currentPage,
-                limit: itemsPerPage
-            }));
-        }
-    }, [dispatch, user, currentPage, itemsPerPage]);
+    const { data, isLoading } = useGetUserTransactionsQuery({
+        userId: user?.id || '',
+        page: currentPage,
+        limit: itemsPerPage
+    }, { skip: !user?.id });
 
-    // Include active books AND returned books with unpaid fines
-    const currentBooks = transactions.filter(t =>
+    const [payFine] = usePayFineMutation();
+    const [renewBook] = useRenewBookMutation();
+
+    const rawData = data?.data;
+    const transactions = Array.isArray(rawData) ? rawData : (rawData?.transactions || []);
+    // @ts-expect-error - pagination might not exist on array response
+    const pagination = Array.isArray(rawData) ? null : rawData?.pagination;
+
+    // Filter active books or returned books with unpaid fines
+    const currentBooks = Array.isArray(transactions) ? transactions.filter(t =>
         t.status !== 'RETURNED' || (t.fineAmount && t.fineAmount > 0)
-    );
+    ) : [];
 
     const handlePayFine = async (data: { amount: number; paymentMethod: string; transactionIdRef?: string }) => {
         if (!selectedTransaction) return;
         try {
-            await dispatch(payFine({ transactionId: selectedTransaction.id, ...data })).unwrap();
+            await payFine({ transactionId: selectedTransaction.id, ...data }).unwrap();
             toast.success('Fine paid successfully!');
             setShowPayFineModal(false);
-            dispatch(fetchUserHistory({ userId: user!.id, page: currentPage, limit: itemsPerPage }));
         } catch (error: any) {
-            toast.error(error || 'Failed to pay fine');
+            toast.error(error?.data?.message || 'Failed to pay fine');
+        }
+    };
+
+    const handleRenew = async (transactionId: string) => {
+        try {
+            await renewBook(transactionId).unwrap();
+            toast.success('Book renewed successfully!');
+        } catch (e: any) {
+            toast.error(e?.data?.message || 'Failed to renew');
         }
     };
 
@@ -65,7 +74,10 @@ export default function MyBooksPage() {
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 {isLoading ? (
-                    <div className="p-8 text-center text-gray-500">Loading your books...</div>
+                    <div className="p-12 text-center text-gray-500 flex flex-col items-center">
+                        <Loader2 className="w-8 h-8 animate-spin text-primary-500 mb-2" />
+                        <p>Loading your books...</p>
+                    </div>
                 ) : currentBooks.length > 0 ? (
                     <div className="divide-y divide-gray-100">
                         {currentBooks.map((transaction) => {
@@ -106,20 +118,12 @@ export default function MyBooksPage() {
                                             </div>
                                         )}
                                         <div className="flex gap-2">
-                                            {transaction.fineAmount && transaction.fineAmount > 0 && (
+                                            {transaction.fineAmount && transaction.fineAmount > 0 && !transaction.finePaid && (
                                                 <Button size="sm" variant="outline" onClick={() => { setSelectedTransaction(transaction); setShowPayFineModal(true); }} className="text-red-600 border-red-600 hover:bg-red-50">
                                                     Pay Fine
                                                 </Button>
                                             )}
-                                            <Button size="sm" variant="outline" onClick={async () => {
-                                                try {
-                                                    await api.post(`/transactions/${transaction.id}/renew`);
-                                                    toast.success('Book renewed successfully!');
-                                                    dispatch(fetchUserHistory({ userId: user!.id, limit: 100 }));
-                                                } catch (e: any) {
-                                                    toast.error(e.response?.data?.message || 'Failed to renew');
-                                                }
-                                            }}>Renew</Button>
+                                            <Button size="sm" variant="outline" onClick={() => handleRenew(transaction.id)}>Renew</Button>
                                         </div>
                                     </div>
                                 </div>

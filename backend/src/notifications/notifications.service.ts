@@ -227,6 +227,34 @@ export class NotificationsService {
         };
     }
 
+    async deleteAllNotifications(
+        userId: string,
+        requestingUserId: string,
+        role: UserRole,
+    ) {
+        // Authorization check
+        if (
+            role === UserRole.USER &&
+            userId !== requestingUserId
+        ) {
+            throw new ForbiddenException(
+                'You can only delete your own notifications',
+            );
+        }
+
+        const result = await this.prisma.notification.deleteMany({
+            where: {
+                userId,
+            },
+        });
+
+        return {
+            success: true,
+            message: `${result.count} notifications deleted successfully`,
+            data: { count: result.count },
+        };
+    }
+
     // Helper method for transaction notifications
     async sendBookIssuedNotification(transactionId: string, userId: string, bookTitle: string) {
         return this.createNotification({
