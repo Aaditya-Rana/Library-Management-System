@@ -29,7 +29,7 @@ export default function ApproveBorrowRequestModal({
         if (isOpen) {
             // Get DEFAULT_LOAN_PERIOD from settings (default to 14 days)
             const loanPeriodSetting = settings.find((s) => s.key === 'DEFAULT_LOAN_PERIOD');
-            const loanPeriodDays = loanPeriodSetting ? parseInt(loanPeriodSetting.value) : 14;
+            const loanPeriodDays = loanPeriodSetting ? parseInt(String(loanPeriodSetting.value)) : 14;
 
             // Calculate default due date
             const defaultDueDate = new Date();
