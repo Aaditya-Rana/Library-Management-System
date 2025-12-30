@@ -66,65 +66,74 @@ export function BorrowRequestButton({ bookId, bookTitle, availableCopies }: Borr
             </Button>
 
             {isOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-                        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                            <h2 className="text-xl font-bold text-gray-900">Request to Borrow</h2>
-                            <button
-                                onClick={() => setIsOpen(false)}
-                                className="text-gray-400 hover:text-gray-600"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
+                <div className="fixed inset-0 z-50 overflow-y-auto">
+                    {/* Backdrop */}
+                    <div
+                        className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+                        onClick={() => setIsOpen(false)}
+                    />
 
-                        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Book
-                                </label>
-                                <p className="text-gray-900 font-medium">{bookTitle}</p>
-                            </div>
-
-                            <div>
-                                <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Notes (Optional)
-                                </label>
-                                <textarea
-                                    id="notes"
-                                    rows={3}
-                                    value={notes}
-                                    onChange={(e) => setNotes(e.target.value)}
-                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                                    placeholder="Any special requests or preferred pickup time..."
-                                />
-                            </div>
-
-                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                                <p className="text-sm text-blue-800">
-                                    Your request will be reviewed by a librarian. You&apos;ll be notified once it&apos;s approved.
-                                </p>
-                            </div>
-
-                            <div className="flex gap-3">
-                                <Button
-                                    type="button"
-                                    variant="outline"
+                    {/* Modal */}
+                    <div className="flex min-h-full items-center justify-center p-4 text-center">
+                        <div className="relative transform overflow-hidden bg-white rounded-xl shadow-xl transition-all sm:max-w-md w-full text-left">
+                            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                                <h2 className="text-xl font-bold text-gray-900">Request to Borrow</h2>
+                                <button
                                     onClick={() => setIsOpen(false)}
-                                    className="flex-1"
-                                    disabled={isSubmitting}
+                                    className="text-gray-400 hover:text-gray-600 transition-colors"
                                 >
-                                    Cancel
-                                </Button>
-                                <Button
-                                    type="submit"
-                                    className="flex-1"
-                                    disabled={isSubmitting}
-                                >
-                                    {isSubmitting ? 'Submitting...' : 'Submit Request'}
-                                </Button>
+                                    <X className="w-5 h-5" />
+                                </button>
                             </div>
-                        </form>
+
+                            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Book
+                                    </label>
+                                    <p className="text-gray-900 font-medium">{bookTitle}</p>
+                                </div>
+
+                                <div>
+                                    <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Notes (Optional)
+                                    </label>
+                                    <textarea
+                                        id="notes"
+                                        rows={3}
+                                        value={notes}
+                                        onChange={(e) => setNotes(e.target.value)}
+                                        className="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                        placeholder="Any special requests or preferred pickup time..."
+                                    />
+                                </div>
+
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                    <p className="text-sm text-blue-800">
+                                        Your request will be reviewed by a librarian. You&apos;ll be notified once it&apos;s approved.
+                                    </p>
+                                </div>
+
+                                <div className="flex gap-3 pt-2">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => setIsOpen(false)}
+                                        className="flex-1"
+                                        disabled={isSubmitting}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        type="submit"
+                                        className="flex-1"
+                                        disabled={isSubmitting}
+                                    >
+                                        {isSubmitting ? 'Submitting...' : 'Submit Request'}
+                                    </Button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
             )}

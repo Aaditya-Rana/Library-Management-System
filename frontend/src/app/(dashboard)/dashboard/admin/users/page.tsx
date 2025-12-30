@@ -1,59 +1,41 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import api from '@/services/api';
+import { useGetUsersQuery, useManageUserStatusMutation } from '@/features/users/usersApi';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Search, MoreVertical, UserX, UserCheck, Shield } from 'lucide-react';
 import AuthGuard from '@/components/auth/AuthGuard';
-
-interface User {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    role: string;
-    status: string;
-    createdAt: string;
-}
+import toast from 'react-hot-toast';
 
 export default function AdminUsersPage() {
-    const [users, setUsers] = useState<User[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [roleFilter, setRoleFilter] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
-
-    const fetchUsers = async () => {
-        setIsLoading(true);
-        try {
-            const params = new URLSearchParams();
-            if (search) params.append('search', search);
-            if (roleFilter && roleFilter !== 'All Roles') params.append('role', roleFilter);
-            if (statusFilter && statusFilter !== 'All Status') params.append('status', statusFilter);
-
-            const response = await api.get(`/users?${params.toString()}`);
-            setUsers(response.data.data.users);
-        } catch (error) {
-            console.error('Failed to fetch users', error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    const [debouncedSearch, setDebouncedSearch] = useState('');
 
     useEffect(() => {
-        const timer = setTimeout(fetchUsers, 500);
+        const timer = setTimeout(() => setDebouncedSearch(search), 500);
         return () => clearTimeout(timer);
-    }, [search, roleFilter, statusFilter]);
+    }, [search]);
+
+    const { data, isLoading } = useGetUsersQuery({
+        search: debouncedSearch || undefined,
+        role: roleFilter || undefined,
+        status: statusFilter || undefined,
+    });
+
+    const [manageUserStatus] = useManageUserStatusMutation();
+
+    const users = data?.data?.users || [];
 
     const handleAction = async (userId: string, action: 'approve' | 'suspend' | 'activate') => {
         try {
-            await api.post(`/users/${userId}/${action}`);
-            fetchUsers();
-            alert(`User ${action}d successfully`);
+            await manageUserStatus({ userId, action }).unwrap();
+            toast.success(`User ${action}d successfully`);
         } catch (error: any) {
-            alert(error.response?.data?.message || 'Action failed');
+            toast.error(error?.data?.message || 'Action failed');
         }
     };
 
@@ -146,7 +128,7 @@ export default function AdminUsersPage() {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {new Date(user.createdAt).toLocaleDateString()}
+                                                {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 {user.status === 'PENDING_APPROVAL' && (

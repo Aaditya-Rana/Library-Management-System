@@ -23,7 +23,7 @@ const getInitialState = (): AuthState => {
                     isLoading: false,
                     error: null
                 };
-            } catch (e) {
+            } catch {
                 console.error('Failed to parse user from local storage');
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');

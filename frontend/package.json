@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
     "@reduxjs/toolkit": "^2.11.2",
     "axios": "^1.13.2",
     "clsx": "^2.1.1",
@@ -18,11 +19,13 @@
     "react": "19.2.3",
     "react-barcode": "^1.6.1",
     "react-dom": "19.2.3",
+    "react-hook-form": "^7.69.0",
     "react-hot-toast": "^2.6.0",
     "react-quill-new": "^3.7.0",
     "react-redux": "^9.2.0",
     "recharts": "^3.6.0",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.0",
+    "zod": "^4.2.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

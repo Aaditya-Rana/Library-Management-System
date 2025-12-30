@@ -42,6 +42,7 @@ export interface Transaction {
     returnDate?: string;
     status: 'ISSUED' | 'RETURNED' | 'OVERDUE' | 'RENEWED';
     fineAmount?: number;
+    finePaid?: boolean;
 }
 
 export interface Pagination {
@@ -143,7 +144,7 @@ export interface Payment {
 export interface Setting {
     id: string;
     key: string;
-    value: string;
+    value: string | number | boolean;
     category: 'LIBRARY' | 'FINES' | 'MEMBERSHIP' | 'LOANS' | 'SYSTEM';
     dataType: 'STRING' | 'NUMBER' | 'BOOLEAN' | 'JSON';
     description?: string;

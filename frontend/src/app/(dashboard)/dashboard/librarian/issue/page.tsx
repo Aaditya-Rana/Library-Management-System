@@ -10,12 +10,25 @@ import { Input } from '@/components/ui/Input';
 import AuthGuard from '@/components/auth/AuthGuard';
 import { ArrowLeft, CheckCircle, Search, User as UserIcon, Book as BookIcon, Calendar } from 'lucide-react';
 
+import AlertModal from '@/components/ui/AlertModal';
+
 export default function IssueBookPage() {
     const router = useRouter();
     const dispatch = useAppDispatch();
     const { isLoading } = useAppSelector(state => state.transactions);
 
     const [success, setSuccess] = useState(false);
+    const [alertConfig, setAlertConfig] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        type: 'success' | 'error' | 'warning' | 'info';
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        type: 'warning'
+    });
 
     const [issueDetails, setIssueDetails] = useState({
         dueDate: '',
@@ -54,9 +67,10 @@ export default function IssueBookPage() {
 
     useEffect(() => {
         // Fetch initial data
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         searchUsers('');
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+
         searchBooks('');
     }, []);
 
@@ -93,10 +107,31 @@ export default function IssueBookPage() {
                     notes: ''
                 });
             } else {
-                alert(resultAction.payload || 'Failed to issue book.');
+                const errorMessage = resultAction.payload as string || 'Failed to issue book.';
+                if (errorMessage.toLowerCase().includes('pending fines')) {
+                    setAlertConfig({
+                        isOpen: true,
+                        title: 'Pending Fines Detected',
+                        message: 'This user has unpaid fines. They must clear all pending dues before borrowing new books.',
+                        type: 'warning'
+                    });
+                } else {
+                    setAlertConfig({
+                        isOpen: true,
+                        title: 'Issue Failed',
+                        message: errorMessage,
+                        type: 'error'
+                    });
+                }
             }
         } catch (error: any) {
             console.error('Failed to issue book', error);
+            setAlertConfig({
+                isOpen: true,
+                title: 'System Error',
+                message: 'An unexpected error occurred while processing the request.',
+                type: 'error'
+            });
         }
     };
 
@@ -116,6 +151,14 @@ export default function IssueBookPage() {
                         Book issued successfully!
                     </div>
                 )}
+
+                <AlertModal
+                    isOpen={alertConfig.isOpen}
+                    onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
+                    title={alertConfig.title}
+                    message={alertConfig.message}
+                    type={alertConfig.type}
+                />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {/* User Section */}

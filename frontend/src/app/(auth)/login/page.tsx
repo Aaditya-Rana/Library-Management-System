@@ -8,28 +8,51 @@ import { setCredentials } from '@/features/auth/authSlice';
 import api from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Loader2, CheckCircle } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+
+const loginSchema = z.object({
+    email: z.string().email('Please enter a valid email address'),
+    password: z.string().min(8, 'Password must be at least 8 characters'),
+    rememberMe: z.boolean().default(false),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
     const dispatch = useAppDispatch();
     const { isAuthenticated, user } = useAppSelector((state) => state.auth);
 
-    const handleLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm<LoginFormData>({
+        resolver: zodResolver(loginSchema) as any,
+        defaultValues: {
+            email: '',
+            password: '',
+            rememberMe: false,
+        },
+    });
+
+    const handleLogin = async (data: LoginFormData) => {
         setIsLoading(true);
         setError(null);
 
         try {
-            const response = await api.post('/auth/login', { email, password });
+            const response = await api.post('/auth/login', { email: data.email, password: data.password });
             const { user, tokens } = response.data.data;
 
             dispatch(setCredentials({ user, token: tokens.accessToken }));
-            // Save token to localStorage for persistence across reloads (optional/common practice)
+
+            // Handle persistence based on "Remember Me" (conceptually, backend handles generic token lifespan but we can store locally)
+            // For now, abiding by previous logic of always storing tokens.
             localStorage.setItem('token', tokens.accessToken);
             localStorage.setItem('refreshToken', tokens.refreshToken);
             localStorage.setItem('user', JSON.stringify(user));
@@ -100,29 +123,25 @@ export default function LoginPage() {
                         </Link>
                     </p>
                 </div>
-                <form className="mt-8 space-y-6" onSubmit={handleLogin}>
+                <form className="mt-8 space-y-6" onSubmit={handleSubmit(handleLogin)}>
                     <div className="space-y-4">
                         <Input
                             id="email"
-                            name="email"
                             type="email"
                             autoComplete="email"
-                            required
                             label="Email address"
                             placeholder="you@example.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            {...register('email')}
+                            error={errors.email?.message}
                         />
                         <Input
                             id="password"
-                            name="password"
                             type="password"
                             autoComplete="current-password"
-                            required
                             label="Password"
                             placeholder="••••••••"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            {...register('password')}
+                            error={errors.password?.message}
                         />
                     </div>
 
@@ -130,9 +149,9 @@ export default function LoginPage() {
                         <div className="flex items-center">
                             <input
                                 id="remember-me"
-                                name="remember-me"
                                 type="checkbox"
                                 className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                                {...register('rememberMe')}
                             />
                             <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
                                 Remember me

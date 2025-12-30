@@ -1,22 +1,21 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { fetchUserPayments } from '@/features/payments/paymentsSlice';
-import { Button } from '@/components/ui/Button';
-import { DollarSign, Receipt } from 'lucide-react';
-import Link from 'next/link';
+import { useAppSelector } from '@/store/hooks';
+import { useGetUserPaymentsQuery } from '@/features/payments/paymentsApi';
+import { Receipt, Loader2 } from 'lucide-react';
 
 export default function MyPaymentsPage() {
-    const dispatch = useAppDispatch();
-    const { payments, isLoading, error } = useAppSelector((state) => state.payments);
+    // Only import useAppSelector for auth user, which works fine elsewhere.
+    // The previous error was likely due to circular dependency involving the slice.
     const { user } = useAppSelector((state) => state.auth);
 
-    useEffect(() => {
-        if (user) {
-            dispatch(fetchUserPayments(user.id));
-        }
-    }, [dispatch, user]);
+    const { data: paymentsData, isLoading, error } = useGetUserPaymentsQuery(user?.id || '', {
+        skip: !user?.id
+    });
+
+    // Normalize data
+    const rawData = paymentsData?.data;
+    const payments = Array.isArray(rawData) ? rawData : (rawData?.payments || []);
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -55,13 +54,16 @@ export default function MyPaymentsPage() {
 
             {error && (
                 <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
-                    {error}
+                    Error loading payments
                 </div>
             )}
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 {isLoading ? (
-                    <div className="p-8 text-center text-gray-500">Loading payments...</div>
+                    <div className="p-12 text-center text-gray-500 flex flex-col items-center">
+                        <Loader2 className="w-8 h-8 animate-spin text-primary-500 mb-2" />
+                        <p>Loading payments...</p>
+                    </div>
                 ) : payments.length > 0 ? (
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">

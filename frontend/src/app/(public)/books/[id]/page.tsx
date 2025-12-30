@@ -1,49 +1,20 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { use } from 'react';
 import { useRouter } from 'next/navigation';
-import api from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { BorrowRequestButton } from '@/components/BorrowRequestButton';
 import { useAppSelector } from '@/store/hooks';
 import { BookOpen, Calendar, Star, Info, Layers, Book as BookIcon } from 'lucide-react';
-
-interface BookDetails {
-    id: string;
-    title: string;
-    author: string;
-    description: string;
-    coverImageUrl?: string;
-    averageRating?: number;
-    availableCopies: number;
-    totalCopies: number;
-    publicationYear: number;
-    publisher: string;
-    genre: string;
-    pageCount?: number;
-}
+import { useGetBookQuery } from '@/features/books/booksApi';
 
 export default function BookDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
-    const [book, setBook] = useState<BookDetails | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const { isAuthenticated } = useAppSelector((state) => state.auth);
     const router = useRouter();
+    const { data, isLoading } = useGetBookQuery(id);
+    const book = data?.data;
 
-    useEffect(() => {
-        const fetchBook = async () => {
-            try {
-                const response = await api.get(`/books/${id}`);
-                setBook(response.data.data);
-            } catch (error) {
-                console.error('Failed to fetch book', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchBook();
-    }, [id]);
+    const { isAuthenticated } = useAppSelector((state) => state.auth);
 
     if (isLoading) {
         return (
@@ -74,9 +45,9 @@ export default function BookDetailsPage({ params }: { params: Promise<{ id: stri
                     {/* Cover Image */}
                     <div className="md:col-span-1">
                         <div className="aspect-[2/3] relative rounded-xl overflow-hidden shadow-md bg-gray-100">
-                            {book.coverImageUrl ? (
+                            {book.coverImage ? (
                                 <img
-                                    src={book.coverImageUrl}
+                                    src={book.coverImage}
                                     alt={book.title}
                                     className="w-full h-full object-cover"
                                 />
@@ -100,13 +71,11 @@ export default function BookDetailsPage({ params }: { params: Promise<{ id: stri
                     <div className="md:col-span-2 space-y-6">
                         <div>
                             <div className="flex items-center mb-2">
-                                <span className="bg-primary-50 text-primary-700 text-xs font-semibold px-2.5 py-0.5 rounded-full">{book.genre}</span>
-                                {book.averageRating && (
-                                    <div className="ml-3 flex items-center text-amber-500 text-sm font-medium">
-                                        <Star className="w-4 h-4 fill-current mr-1" />
-                                        {book.averageRating}
-                                    </div>
-                                )}
+                                <span className="bg-primary-50 text-primary-700 text-xs font-semibold px-2.5 py-0.5 rounded-full">{book.category || 'General'}</span>
+                                <div className="ml-3 flex items-center text-amber-500 text-sm font-medium">
+                                    <Star className="w-4 h-4 fill-current mr-1" />
+                                    4.5
+                                </div>
                             </div>
                             <h1 className="text-4xl font-bold text-gray-900 mb-2">{book.title}</h1>
                             <p className="text-xl text-gray-600">by {book.author}</p>
@@ -120,18 +89,18 @@ export default function BookDetailsPage({ params }: { params: Promise<{ id: stri
                             </div>
                             <div className="text-center p-3 bg-gray-50 rounded-lg">
                                 <Calendar className="w-5 h-5 mx-auto text-gray-400 mb-1" />
-                                <p className="text-xs text-gray-500 uppercase tracking-wide">Year</p>
-                                <p className="font-semibold text-gray-900">{book.publicationYear}</p>
+                                <p className="text-xs text-gray-500 uppercase tracking-wide">ISBN</p>
+                                <p className="font-semibold text-gray-900">{book.isbn}</p>
                             </div>
                             <div className="text-center p-3 bg-gray-50 rounded-lg">
                                 <BookIcon className="w-5 h-5 mx-auto text-gray-400 mb-1" />
                                 <p className="text-xs text-gray-500 uppercase tracking-wide">Publisher</p>
-                                <p className="font-semibold text-gray-900 truncate">{book.publisher}</p>
+                                <p className="font-semibold text-gray-900 truncate">{book.publisher || 'N/A'}</p>
                             </div>
                             <div className="text-center p-3 bg-gray-50 rounded-lg">
                                 <Info className="w-5 h-5 mx-auto text-gray-400 mb-1" />
-                                <p className="text-xs text-gray-500 uppercase tracking-wide">Pages</p>
-                                <p className="font-semibold text-gray-900">{book.pageCount || 'N/A'}</p>
+                                <p className="text-xs text-gray-500 uppercase tracking-wide">ID</p>
+                                <p className="font-semibold text-gray-900 truncate max-w-[100px] mx-auto" title={book.id}>{book.id.substring(0, 8)}...</p>
                             </div>
                         </div>
 

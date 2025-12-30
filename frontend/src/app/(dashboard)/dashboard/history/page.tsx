@@ -1,31 +1,33 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { fetchAllTransactions, fetchUserHistory } from '@/features/transactions/transactionsSlice';
-import { Button } from '@/components/ui/Button';
-import { BookOpen, Calendar, CheckCircle, AlertOctagon } from 'lucide-react';
-import { Transaction } from '@/types';
+import { useState } from 'react';
+import { useAppSelector } from '@/store/hooks';
+import { useGetAllTransactionsQuery, useGetUserTransactionsQuery } from '@/features/transactions/transactionsApi';
+import { BookOpen, Calendar, CheckCircle, AlertOctagon, Loader2 } from 'lucide-react';
 
 export default function HistoryPage() {
     const { user } = useAppSelector((state) => state.auth);
-    const { transactions, isLoading, error } = useAppSelector((state) => state.transactions);
-    const dispatch = useAppDispatch();
-
-    // Local filter state (could be moved to Redux if we wanted persistent filters, but local is fine)
     const [filter, setFilter] = useState<'ALL' | 'ISSUED' | 'RENEWED' | 'RETURNED' | 'OVERDUE'>('ALL');
 
     const isAdminOrLibrarian = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN' || user?.role === 'LIBRARIAN';
 
-    useEffect(() => {
-        if (!user) return;
+    // Conditional fetching based on role
+    // Note: Hooks must always be called. We can skip using `skip` option.
+    const { data: adminData, isLoading: isAdminLoading } = useGetAllTransactionsQuery(
+        { limit: 100 },
+        { skip: !isAdminOrLibrarian || !user }
+    );
 
-        if (isAdminOrLibrarian) {
-            dispatch(fetchAllTransactions({ limit: 100 }));
-        } else {
-            dispatch(fetchUserHistory({ userId: user.id, limit: 100 }));
-        }
-    }, [dispatch, user, isAdminOrLibrarian]);
+    const { data: userData, isLoading: isUserLoading } = useGetUserTransactionsQuery(
+        { userId: user?.id || '', limit: 100 },
+        { skip: isAdminOrLibrarian || !user?.id }
+    );
+
+    const isLoading = isAdminOrLibrarian ? isAdminLoading : isUserLoading;
+
+    // Normalize data: API might return array directly or { transactions: [...] }
+    const rawData = isAdminOrLibrarian ? adminData?.data : userData?.data;
+    const transactions = Array.isArray(rawData) ? rawData : (rawData?.transactions || []);
 
     const filteredTransactions = transactions.filter(t =>
         filter === 'ALL' ? true : t.status === filter
@@ -60,7 +62,10 @@ export default function HistoryPage() {
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 {isLoading ? (
-                    <div className="p-8 text-center text-gray-500">Loading history...</div>
+                    <div className="p-12 text-center text-gray-500 flex flex-col items-center">
+                        <Loader2 className="w-8 h-8 animate-spin text-primary-500 mb-2" />
+                        <p>Loading history...</p>
+                    </div>
                 ) : filteredTransactions.length > 0 ? (
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
@@ -130,7 +135,7 @@ export default function HistoryPage() {
                     <div className="p-12 text-center text-gray-500">
                         <Calendar className="w-12 h-12 mx-auto text-gray-300 mb-4" />
                         <p className="text-lg font-medium text-gray-900">
-                            {error ? `Error: ${error}` : 'No transactions found'}
+                            No transactions found
                         </p>
                     </div>
                 )}

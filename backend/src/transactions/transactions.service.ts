@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../common/services/prisma.service';
 import { BooksService } from '../books/books.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { SettingsService } from '../settings/settings.service';
 import { IssueBookDto } from './dto/issue-book.dto';
 import { ReturnBookDto } from './dto/return-book.dto';
 import { RenewTransactionDto } from './dto/renew-transaction.dto';
@@ -20,7 +21,21 @@ export class TransactionsService {
         private prisma: PrismaService,
         private booksService: BooksService,
         private notificationsService: NotificationsService,
+        private settingsService: SettingsService,
     ) { }
+
+    private async getSettingValue(key: string, defaultValue: any): Promise<any> {
+        try {
+            const setting = await this.settingsService.getSetting(key);
+            if (setting?.data?.setting?.value !== undefined) {
+                const val = setting.data.setting.value;
+                return isNaN(Number(val)) ? val : Number(val);
+            }
+            return defaultValue;
+        } catch (_) {
+            return defaultValue;
+        }
+    }
 
     async issueBook(issueBookDto: IssueBookDto, librarianId?: string) {
         const { bookId, userId, dueDate, isHomeDelivery, notes } = issueBookDto;
@@ -62,6 +77,21 @@ export class TransactionsService {
             throw new BadRequestException('No copies available for this book');
         }
 
+        // Check max books per user limit
+        const activeTransactionsCount = await this.prisma.transaction.count({
+            where: {
+                userId,
+                status: {
+                    in: [TransactionStatus.ISSUED, TransactionStatus.RENEWED],
+                },
+            },
+        });
+
+        const maxBooksLimit = await this.getSettingValue('loans.max_books_per_user', 5);
+        if (activeTransactionsCount >= maxBooksLimit) {
+            throw new BadRequestException(`User defines reached the maximum limit of ${maxBooksLimit} borrowed books`);
+        }
+
         // Find an available book copy
         const availableCopy = await this.prisma.bookCopy.findFirst({
             where: {
@@ -76,9 +106,13 @@ export class TransactionsService {
 
         // Calculate due date if not provided
         const issueDateObj = new Date();
+
+        // Fetch default loan period from settings to override or fallback
+        const loanDurationDays = await this.getSettingValue('loans.default_period_days', book.loanPeriodDays);
+
         const dueDateObj = dueDate
             ? new Date(dueDate)
-            : new Date(issueDateObj.getTime() + book.loanPeriodDays * 24 * 60 * 60 * 1000);
+            : new Date(issueDateObj.getTime() + loanDurationDays * 24 * 60 * 60 * 1000);
 
         // Create transaction
         const transaction = await this.prisma.transaction.create({
@@ -164,10 +198,23 @@ export class TransactionsService {
         // Calculate fine if overdue
         let fineAmount = 0;
         if (returnDate > transaction.dueDate) {
-            const daysOverdue = Math.ceil(
+            const rawDaysOverdue = Math.ceil(
                 (returnDate.getTime() - transaction.dueDate.getTime()) / (1000 * 60 * 60 * 24)
             );
-            fineAmount = daysOverdue * transaction.book.finePerDay;
+
+            // Fetch fine settings
+            const finePerDay = await this.getSettingValue('fines.per_day_amount', transaction.book.finePerDay);
+            const gracePeriod = await this.getSettingValue('fines.grace_period_days', 0);
+            const maxFineAmount = await this.getSettingValue('fines.max_fine_amount', 10000);
+
+            // Apply grace period
+            const daysOverdue = Math.max(0, rawDaysOverdue - gracePeriod);
+
+            if (daysOverdue > 0) {
+                const calculatedFine = daysOverdue * finePerDay;
+                // Apply max fine cap
+                fineAmount = Math.min(calculatedFine, maxFineAmount);
+            }
         }
 
         // Add damage charge if any
@@ -250,8 +297,9 @@ export class TransactionsService {
         }
 
         // Check renewal limit
-        if (transaction.renewalCount >= transaction.book.maxRenewals) {
-            throw new BadRequestException(`Maximum renewal limit (${transaction.book.maxRenewals}) reached`);
+        const maxRenewals = await this.getSettingValue('loans.max_renewals', transaction.book.maxRenewals);
+        if (transaction.renewalCount >= maxRenewals) {
+            throw new BadRequestException(`Maximum renewal limit (${maxRenewals}) reached`);
         }
 
         // Check if overdue
@@ -439,10 +487,24 @@ export class TransactionsService {
             };
         }
 
-        const daysOverdue = Math.ceil(
+        const rawDaysOverdue = Math.ceil(
             (currentDate.getTime() - transaction.dueDate.getTime()) / (1000 * 60 * 60 * 24)
         );
-        const fineAmount = daysOverdue * transaction.book.finePerDay;
+
+        // Fetch fine settings
+        const finePerDay = await this.getSettingValue('fines.per_day_amount', transaction.book.finePerDay);
+        const gracePeriod = await this.getSettingValue('fines.grace_period_days', 0);
+        const maxFineAmount = await this.getSettingValue('fines.max_fine_amount', 10000);
+
+        // Apply grace period
+        const daysOverdue = Math.max(0, rawDaysOverdue - gracePeriod);
+        let fineAmount = 0;
+
+        if (daysOverdue > 0) {
+            const calculatedFine = daysOverdue * finePerDay;
+            // Apply max fine cap
+            fineAmount = Math.min(calculatedFine, maxFineAmount);
+        }
 
         // Update transaction with calculated fine
         await this.prisma.transaction.update({
@@ -712,7 +774,8 @@ export class TransactionsService {
             },
         });
 
-        // Send notification to librarians
+        // Send notification to librarians (Fire and forget or Promise.all)
+        // We use Promise.all to ensure they are sent but in parallel to speed up response
         try {
             const librarians = await this.prisma.user.findMany({
                 where: {
@@ -721,13 +784,19 @@ export class TransactionsService {
                 },
             });
 
-            for (const librarian of librarians) {
-                await this.notificationsService.sendBorrowRequestNotification(
+            const notificationPromises = librarians.map(librarian =>
+                this.notificationsService.sendBorrowRequestNotification(
                     librarian.id,
                     borrowRequest.user.firstName + ' ' + borrowRequest.user.lastName,
                     borrowRequest.book.title,
-                );
-            }
+                )
+            );
+
+            // Execute in background to not block response
+            Promise.all(notificationPromises).catch(err =>
+                console.error('Failed to send parallel borrow request notifications:', err)
+            );
+
         } catch (error) {
             console.error('Failed to send borrow request notification:', error);
         }
@@ -908,16 +977,14 @@ export class TransactionsService {
             },
         });
 
-        // Send approval notification to user
-        try {
-            await this.notificationsService.sendRequestApprovedNotification(
-                borrowRequest.userId,
-                borrowRequest.book.title,
-                calculatedDueDate,
-            );
-        } catch (error) {
+        // Send approval notification to user (Background)
+        this.notificationsService.sendRequestApprovedNotification(
+            borrowRequest.userId,
+            borrowRequest.book.title,
+            calculatedDueDate,
+        ).catch(error => {
             console.error('Failed to send approval notification:', error);
-        }
+        });
 
         return {
             success: true,
@@ -927,7 +994,8 @@ export class TransactionsService {
     }
 
     async rejectBorrowRequest(requestId: string, dto: any, librarianId: string) {
-        const { rejectionReason } = dto;
+        const { reason: rejectionReason } = dto;
+
 
         const borrowRequest = await this.prisma.borrowRequest.findUnique({
             where: { id: requestId },
@@ -959,16 +1027,14 @@ export class TransactionsService {
             },
         });
 
-        // Send rejection notification to user
-        try {
-            await this.notificationsService.sendRequestRejectedNotification(
-                borrowRequest.userId,
-                borrowRequest.book.title,
-                rejectionReason,
-            );
-        } catch (error) {
+        // Send rejection notification to user (Background)
+        this.notificationsService.sendRequestRejectedNotification(
+            borrowRequest.userId,
+            borrowRequest.book.title,
+            rejectionReason,
+        ).catch(error => {
             console.error('Failed to send rejection notification:', error);
-        }
+        });
 
         return {
             success: true,

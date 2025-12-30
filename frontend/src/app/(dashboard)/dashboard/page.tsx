@@ -29,7 +29,7 @@ export default function DashboardPage() {
     const { user } = useAppSelector((state) => state.auth);
 
     // Use RTK Query hook for automatic caching (5 minutes)
-    const { data: stats, isLoading, error } = useGetUserStatsQuery(user?.id!, {
+    const { data: stats, isLoading, error } = useGetUserStatsQuery(user?.id || '', {
         skip: !user?.id, // Don't query if no user ID
     });
 

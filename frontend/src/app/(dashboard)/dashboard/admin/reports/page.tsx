@@ -1,20 +1,21 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { fetchDashboardStats, fetchPopularBooks, fetchRevenueReport } from '@/features/reports/reportsSlice';
+import { useGetReportsStatsQuery, useGetPopularBooksQuery, useGetRevenueReportQuery } from '@/features/reports/reportsApi';
 import { BookOpen, Users, TrendingUp, AlertCircle, DollarSign, Clock } from 'lucide-react';
 import AuthGuard from '@/components/auth/AuthGuard';
+import { PopularBook, RevenueData } from '@/types';
 
 export default function ReportsPage() {
-    const dispatch = useAppDispatch();
-    const { dashboardStats, popularBooks, revenueData, isLoading } = useAppSelector((state) => state.reports);
+    // RTK Query hooks
+    const { data: statsData, isLoading: isStatsLoading } = useGetReportsStatsQuery();
+    const { data: popularBooksData, isLoading: isBooksLoading } = useGetPopularBooksQuery({ limit: 10 });
+    const { data: revenueDataResult, isLoading: isRevenueLoading } = useGetRevenueReportQuery({ groupBy: 'month' });
 
-    useEffect(() => {
-        dispatch(fetchDashboardStats());
-        dispatch(fetchPopularBooks({ limit: 10 }));
-        dispatch(fetchRevenueReport({ groupBy: 'month' }));
-    }, [dispatch]);
+    const dashboardStats = statsData?.data;
+    const popularBooks = popularBooksData?.data?.books || [];
+    const revenueData = revenueDataResult?.data?.revenue || [];
+
+    const isLoading = isStatsLoading || isBooksLoading || isRevenueLoading;
 
     const stats = [
         {
@@ -64,7 +65,10 @@ export default function ReportsPage() {
                 </div>
 
                 {isLoading ? (
-                    <div className="p-8 text-center text-gray-500">Loading statistics...</div>
+                    <div className="p-8 text-center text-gray-500 flex flex-col items-center">
+                        <Clock className="w-8 h-8 animate-spin text-primary-500 mb-2" />
+                        Loading statistics...
+                    </div>
                 ) : (
                     <>
                         {/* Dashboard Stats */}
@@ -90,7 +94,7 @@ export default function ReportsPage() {
                                 <h2 className="text-lg font-bold text-gray-900 mb-4">Popular Books</h2>
                                 {popularBooks.length > 0 ? (
                                     <div className="space-y-3">
-                                        {popularBooks.map((book, index) => (
+                                        {popularBooks.map((book: PopularBook, index: number) => (
                                             <div key={`book-${book.bookId || index}`} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                                                 <div className="flex-shrink-0 w-8 h-8 bg-primary-100 text-primary-700 rounded-full flex items-center justify-center font-bold">
                                                     {index + 1}
@@ -115,7 +119,7 @@ export default function ReportsPage() {
                                 <h2 className="text-lg font-bold text-gray-900 mb-4">Revenue Trend</h2>
                                 {revenueData.length > 0 ? (
                                     <div className="space-y-3">
-                                        {revenueData.slice(0, 6).map((data, index) => (
+                                        {revenueData.slice(0, 6).map((data: RevenueData, index: number) => (
                                             <div key={`revenue-${data.date || index}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                                 <span className="text-sm font-medium text-gray-700">
                                                     {new Date(data.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
