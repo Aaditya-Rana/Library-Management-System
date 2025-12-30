@@ -28,7 +28,7 @@ export default function MyBooksPage() {
 
     const rawData = data?.data;
     const transactions = Array.isArray(rawData) ? rawData : (rawData?.transactions || []);
-    // @ts-ignore - pagination might not exist on array response
+    // @ts-expect-error - pagination might not exist on array response
     const pagination = Array.isArray(rawData) ? null : rawData?.pagination;
 
     // Filter active books or returned books with unpaid fines

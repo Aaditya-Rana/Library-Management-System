@@ -32,7 +32,7 @@ export class TransactionsService {
                 return isNaN(Number(val)) ? val : Number(val);
             }
             return defaultValue;
-        } catch (_) {
+        } catch {
             return defaultValue;
         }
     }
