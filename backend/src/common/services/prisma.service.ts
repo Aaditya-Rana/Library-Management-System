@@ -19,6 +19,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
             min: 0, // Allow scaling down to 0
             idleTimeoutMillis: 30000,
             connectionTimeoutMillis: 10000,
+            ssl: { rejectUnauthorized: false },
         });
 
         const adapter = new PrismaPg(pool);
