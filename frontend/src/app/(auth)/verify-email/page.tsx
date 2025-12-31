@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/services/api';
 import { Button } from '@/components/ui/Button';
@@ -12,7 +12,6 @@ function VerifyEmailContent() {
     const [message, setMessage] = useState('');
     const searchParams = useSearchParams();
     const token = searchParams.get('token');
-    const router = useRouter();
 
     useEffect(() => {
         const verifyEmail = async () => {
@@ -66,7 +65,7 @@ function VerifyEmailContent() {
             <h2 className="text-2xl font-bold text-gray-900">Verification Failed</h2>
             <p className="text-gray-600 mt-2 mb-8">{message}</p>
             <div className="flex flex-col gap-3">
-                <Link href="/auth/resend-verification">
+                <Link href="/resend-verification">
                     <Button variant="outline" className="w-full">Resend Verification Email</Button>
                 </Link>
                 <Link href="/login">

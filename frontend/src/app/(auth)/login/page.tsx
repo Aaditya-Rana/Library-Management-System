@@ -31,6 +31,7 @@ export default function LoginPage() {
     const {
         register,
         handleSubmit,
+        watch,
         formState: { errors },
     } = useForm<LoginFormData>({
         resolver: zodResolver(loginSchema) as any,
@@ -40,6 +41,8 @@ export default function LoginPage() {
             rememberMe: false,
         },
     });
+
+    const emailValue = watch('email');
 
     const handleLogin = async (data: LoginFormData) => {
         setIsLoading(true);
@@ -158,10 +161,17 @@ export default function LoginPage() {
                             </label>
                         </div>
 
-                        <div className="text-sm">
-                            <Link href="/forgot-password" className="font-medium text-primary-600 hover:text-primary-500">
-                                Forgot your password?
-                            </Link>
+                        <div className="text-sm space-y-1 text-right">
+                            <div>
+                                <Link href="/forgot-password" className="font-medium text-primary-600 hover:text-primary-500">
+                                    Forgot your password?
+                                </Link>
+                            </div>
+                            <div>
+                                <Link href="/resend-verification" className="font-medium text-primary-600 hover:text-primary-500">
+                                    Resend verification?
+                                </Link>
+                            </div>
                         </div>
                     </div>
 
@@ -170,6 +180,16 @@ export default function LoginPage() {
                             <div className="flex">
                                 <div className="ml-3">
                                     <h3 className="text-sm font-medium text-red-800">{error}</h3>
+                                    {(error.toLowerCase().includes('verify') || error.toLowerCase().includes('verification')) && (
+                                        <div className="mt-2">
+                                            <Link
+                                                href={`/resend-verification?email=${encodeURIComponent(emailValue || '')}`}
+                                                className="text-sm font-medium text-red-800 underline hover:text-red-700"
+                                            >
+                                                Resend Verification Email
+                                            </Link>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

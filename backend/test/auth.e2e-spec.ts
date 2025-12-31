@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from './../src/app.module';
-import { PrismaService } from '../src/common/services/prisma.service';
+import { PrismaService } from '../src/prisma/prisma.service';
 import { EmailService } from '../src/common/services/email.service';
 import { MockEmailService } from './mocks/mock-email.service';
 import * as crypto from 'crypto';
@@ -119,6 +119,7 @@ describe('Auth E2E Tests', () => {
             });
 
             expect(verifiedUser?.emailVerified).toBe(true);
+            expect(verifiedUser?.status).toBe('ACTIVE');
             expect(verifiedUser?.emailVerificationToken).toBeNull();
             expect(verifiedUser?.emailVerificationExpiry).toBeNull();
         });

@@ -56,7 +56,7 @@ export class AuthService {
                 phone,
                 dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
                 role: role || UserRole.USER,
-                status: UserStatus.PENDING_APPROVAL,
+                status: UserStatus.ACTIVE,
                 emailVerificationToken: hashedToken,
                 emailVerificationExpiry: tokenExpiry,
             },
@@ -112,6 +112,10 @@ export class AuthService {
         }
 
         // Check user status
+        if (!user.emailVerified) {
+            throw new ForbiddenException('Please verify your email address to access your account');
+        }
+
         if (user.status === UserStatus.PENDING_APPROVAL) {
             throw new ForbiddenException('Your account is pending approval');
         }
@@ -330,6 +334,7 @@ export class AuthService {
             where: { id: user.id },
             data: {
                 emailVerified: true,
+                status: UserStatus.ACTIVE,
                 emailVerificationToken: null,
                 emailVerificationExpiry: null,
             },
