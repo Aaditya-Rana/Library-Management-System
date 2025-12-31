@@ -4,7 +4,7 @@ import {
     ConflictException,
     BadRequestException,
 } from '@nestjs/common';
-import { PrismaService } from '../common/services/prisma.service';
+import { PrismaClient } from '@prisma/client';
 import { CloudinaryService } from '../common/services/cloudinary.service';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
@@ -16,7 +16,7 @@ import { UpdateCopyStatusDto } from './dto/update-copy-status.dto';
 @Injectable()
 export class BooksService {
     constructor(
-        private prisma: PrismaService,
+        private prisma: PrismaClient,
         private cloudinary: CloudinaryService,
     ) { }
 

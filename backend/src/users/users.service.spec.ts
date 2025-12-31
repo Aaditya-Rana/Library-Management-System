@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from './users.service';
-import { PrismaService } from '../common/services/prisma.service';
+import { PrismaClient } from '@prisma/client';
 import {
     NotFoundException,
     ConflictException,
@@ -14,6 +14,7 @@ jest.mock('bcrypt');
 
 describe('UsersService', () => {
     let service: UsersService;
+    let _prisma: PrismaClient;
 
     const mockPrismaService = {
         user: {
@@ -36,13 +37,14 @@ describe('UsersService', () => {
             providers: [
                 UsersService,
                 {
-                    provide: PrismaService,
+                    provide: PrismaClient,
                     useValue: mockPrismaService,
                 },
             ],
         }).compile();
 
         service = module.get<UsersService>(UsersService);
+        _prisma = module.get<PrismaClient>(PrismaClient);
 
         jest.clearAllMocks();
     });

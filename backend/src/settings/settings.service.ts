@@ -1,11 +1,11 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../common/services/prisma.service';
+import { PrismaClient } from '@prisma/client';
 import { SettingCategory, SettingDataType } from '@prisma/client';
 import { UpdateSettingDto } from './dto/update-setting.dto';
 
 @Injectable()
 export class SettingsService {
-    constructor(private readonly prisma: PrismaService) { }
+    constructor(private readonly prisma: PrismaClient) { }
 
     /**
      * Get all settings or filter by category

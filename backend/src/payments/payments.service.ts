@@ -4,7 +4,7 @@ import {
     BadRequestException,
     ForbiddenException,
 } from '@nestjs/common';
-import { PrismaService } from '../common/services/prisma.service';
+import { PrismaClient } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { RecordPaymentDto } from './dto/record-payment.dto';
 import { RefundPaymentDto } from './dto/refund-payment.dto';
@@ -14,7 +14,7 @@ import { PaymentStatus, UserRole, PaymentMethod } from '@prisma/client';
 @Injectable()
 export class PaymentsService {
     constructor(
-        private readonly prisma: PrismaService,
+        private readonly prisma: PrismaClient,
         private readonly notificationsService: NotificationsService,
     ) { }
 

@@ -1,13 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BooksService } from './books.service';
-import { PrismaService } from '../common/services/prisma.service';
+import { PrismaClient } from '@prisma/client';
 import { CloudinaryService } from '../common/services/cloudinary.service';
 import { NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { BookCondition, BookStatus } from '@prisma/client';
 
 describe('BooksService', () => {
     let service: BooksService;
-    let _prismaService: PrismaService;
+    let _prisma: PrismaClient;
     let _cloudinaryService: CloudinaryService;
 
     const mockPrismaService = {
@@ -63,7 +63,7 @@ describe('BooksService', () => {
             providers: [
                 BooksService,
                 {
-                    provide: PrismaService,
+                    provide: PrismaClient,
                     useValue: mockPrismaService,
                 },
                 {
@@ -74,7 +74,7 @@ describe('BooksService', () => {
         }).compile();
 
         service = module.get<BooksService>(BooksService);
-        _prismaService = module.get<PrismaService>(PrismaService);
+        _prisma = module.get<PrismaClient>(PrismaClient);
         _cloudinaryService = module.get<CloudinaryService>(CloudinaryService);
     });
 

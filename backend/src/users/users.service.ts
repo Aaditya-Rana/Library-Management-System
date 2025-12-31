@@ -5,7 +5,7 @@ import {
     ForbiddenException,
     BadRequestException,
 } from '@nestjs/common';
-import { PrismaService } from '../common/services/prisma.service';
+import { PrismaClient } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { QueryUsersDto } from './dto/query-users.dto';
@@ -14,7 +14,7 @@ import { UserRole, UserStatus, MembershipType } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
-    constructor(private prisma: PrismaService) { }
+    constructor(private prisma: PrismaClient) { }
 
     async findAll(queryDto: QueryUsersDto) {
         const {
