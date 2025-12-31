@@ -1,14 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import api from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { ArrowLeft, Mail, CheckCircle } from 'lucide-react';
 
-export default function ResendVerificationPage() {
-    const [email, setEmail] = useState('');
+function ResendVerificationForm() {
+    const searchParams = useSearchParams();
+    const [email, setEmail] = useState(searchParams.get('email') || '');
     const [isLoading, setIsLoading] = useState(false);
     const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
     const [message, setMessage] = useState('');
@@ -101,5 +103,13 @@ export default function ResendVerificationPage() {
                 </form>
             </div>
         </div>
+    );
+}
+
+export default function ResendVerificationPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+            <ResendVerificationForm />
+        </Suspense>
     );
 }

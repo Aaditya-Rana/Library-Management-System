@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { PrismaClient, UserRole, UserStatus } from '@prisma/client'; // Import PrismaClient
 import { EmailService } from '../common/services/email.service';
-import { ConflictException, UnauthorizedException, ForbiddenException } from '@nestjs/common';
+import { ConflictException, UnauthorizedException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 
 jest.mock('bcrypt');
@@ -16,6 +16,7 @@ describe('AuthService', () => {
     const mockPrismaService = {
         user: {
             findUnique: jest.fn(),
+            findFirst: jest.fn(),
             create: jest.fn(),
             update: jest.fn(),
         },
@@ -119,6 +120,7 @@ describe('AuthService', () => {
             status: UserStatus.ACTIVE,
             membershipType: 'FREE',
             profileImageUrl: null,
+            emailVerified: true,
         };
 
         it('should successfully login a user', async () => {
@@ -213,6 +215,53 @@ describe('AuthService', () => {
 
             await expect(service.validateUser('1')).rejects.toThrow(
                 UnauthorizedException,
+            );
+        });
+    });
+
+    describe('verifyEmail', () => {
+        const token = 'valid-token';
+
+        it('should verify email and activate user', async () => {
+            const mockUser = {
+                id: '1',
+                email: 'test@example.com',
+                firstName: 'John',
+                lastName: 'Doe',
+                emailVerified: false,
+                status: UserStatus.PENDING_APPROVAL,
+            };
+
+            mockPrismaService.user.findFirst.mockResolvedValue(mockUser);
+            mockPrismaService.user.update.mockResolvedValue({
+                ...mockUser,
+                emailVerified: true,
+                status: UserStatus.ACTIVE,
+            });
+
+            const result = await service.verifyEmail(token);
+
+            expect(result.success).toBe(true);
+            expect(mockPrismaService.user.update).toHaveBeenCalledWith({
+                where: { id: mockUser.id },
+                data: {
+                    emailVerified: true,
+                    status: UserStatus.ACTIVE,
+                    emailVerificationToken: null,
+                    emailVerificationExpiry: null,
+                },
+            });
+            expect(mockEmailService.sendWelcomeEmail).toHaveBeenCalledWith(
+                mockUser.email,
+                `${mockUser.firstName} ${mockUser.lastName}`,
+            );
+        });
+
+        it('should throw BadRequestException if token is invalid or expired', async () => {
+            mockPrismaService.user.findFirst.mockResolvedValue(null);
+
+            await expect(service.verifyEmail(token)).rejects.toThrow(
+                BadRequestException,
             );
         });
     });
