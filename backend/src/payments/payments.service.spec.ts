@@ -1,13 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PaymentsService } from './payments.service';
-import { PrismaService } from '../common/services/prisma.service';
+import { PrismaClient, PaymentStatus, PaymentMethod, UserRole } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
-import { PaymentStatus, PaymentMethod, UserRole } from '@prisma/client';
 
 describe('PaymentsService', () => {
     let service: PaymentsService;
-    let _prisma: PrismaService;
+    let _prisma: PrismaClient;
 
     const mockPrismaService = {
         transaction: {
@@ -35,7 +34,7 @@ describe('PaymentsService', () => {
             providers: [
                 PaymentsService,
                 {
-                    provide: PrismaService,
+                    provide: PrismaClient,
                     useValue: mockPrismaService,
                 },
                 {
@@ -46,7 +45,7 @@ describe('PaymentsService', () => {
         }).compile();
 
         service = module.get<PaymentsService>(PaymentsService);
-        _prisma = module.get<PrismaService>(PrismaService);
+        _prisma = module.get<PrismaClient>(PrismaClient);
     });
 
     afterEach(() => {

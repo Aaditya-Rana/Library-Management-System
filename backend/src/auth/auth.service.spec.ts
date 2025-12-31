@@ -1,17 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
-import { PrismaService } from '../common/services/prisma.service';
+import { PrismaClient, UserRole, UserStatus } from '@prisma/client'; // Import PrismaClient
 import { EmailService } from '../common/services/email.service';
 import { ConflictException, UnauthorizedException, ForbiddenException } from '@nestjs/common';
-import { UserRole, UserStatus } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 jest.mock('bcrypt');
 
 describe('AuthService', () => {
     let service: AuthService;
-    let _prismaService: PrismaService;
+    let _prisma: PrismaClient; // Rename to _prisma and use PrismaClient type
     let _jwtService: JwtService;
 
     const mockPrismaService = {
@@ -37,7 +36,7 @@ describe('AuthService', () => {
             providers: [
                 AuthService,
                 {
-                    provide: PrismaService,
+                    provide: PrismaClient, // Provide PrismaClient token
                     useValue: mockPrismaService,
                 },
                 {
@@ -52,7 +51,7 @@ describe('AuthService', () => {
         }).compile();
 
         service = module.get<AuthService>(AuthService);
-        _prismaService = module.get<PrismaService>(PrismaService);
+        _prisma = module.get<PrismaClient>(PrismaClient); // Get PrismaClient
         _jwtService = module.get<JwtService>(JwtService);
     });
 

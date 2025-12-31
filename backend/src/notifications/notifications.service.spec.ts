@@ -1,12 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotificationsService } from './notifications.service';
-import { PrismaService } from '../common/services/prisma.service';
+import { PrismaClient, NotificationCategory, UserRole } from '@prisma/client';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
-import { NotificationCategory, UserRole } from '@prisma/client';
 
 describe('NotificationsService', () => {
     let service: NotificationsService;
-    let _prisma: PrismaService;
+    let _prisma: PrismaClient;
 
     const mockPrismaService = {
         notification: {
@@ -39,14 +38,14 @@ describe('NotificationsService', () => {
             providers: [
                 NotificationsService,
                 {
-                    provide: PrismaService,
+                    provide: PrismaClient,
                     useValue: mockPrismaService,
                 },
             ],
         }).compile();
 
         service = module.get<NotificationsService>(NotificationsService);
-        _prisma = module.get<PrismaService>(PrismaService);
+        _prisma = module.get<PrismaClient>(PrismaClient);
     });
 
     afterEach(() => {

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TransactionsService } from './transactions.service';
-import { PrismaService } from '../common/services/prisma.service';
+import { PrismaClient, TransactionStatus, PaymentMethod } from '@prisma/client';
 import { BooksService } from '../books/books.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { SettingsService } from '../settings/settings.service';
@@ -9,11 +9,10 @@ import {
     BadRequestException,
     ForbiddenException,
 } from '@nestjs/common';
-import { TransactionStatus, PaymentMethod } from '@prisma/client';
 
 describe('TransactionsService', () => {
     let service: TransactionsService;
-    let _prismaService: PrismaService;
+    let _prisma: PrismaClient;
     let _booksService: BooksService;
 
     const mockPrismaService = {
@@ -106,7 +105,7 @@ describe('TransactionsService', () => {
             providers: [
                 TransactionsService,
                 {
-                    provide: PrismaService,
+                    provide: PrismaClient,
                     useValue: mockPrismaService,
                 },
                 {
@@ -139,7 +138,7 @@ describe('TransactionsService', () => {
         }).compile();
 
         service = module.get<TransactionsService>(TransactionsService);
-        _prismaService = module.get<PrismaService>(PrismaService);
+        _prisma = module.get<PrismaClient>(PrismaClient);
         _booksService = module.get<BooksService>(BooksService);
     });
 

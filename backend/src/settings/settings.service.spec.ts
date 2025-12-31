@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SettingsService } from './settings.service';
-import { PrismaService } from '../common/services/prisma.service';
-import { SettingCategory, SettingDataType } from '@prisma/client';
+import { PrismaClient, SettingCategory, SettingDataType } from '@prisma/client';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 describe('SettingsService', () => {
     let service: SettingsService;
+    let _prisma: PrismaClient;
 
     const mockPrismaService = {
         setting: {
@@ -21,13 +21,14 @@ describe('SettingsService', () => {
             providers: [
                 SettingsService,
                 {
-                    provide: PrismaService,
+                    provide: PrismaClient,
                     useValue: mockPrismaService,
                 },
             ],
         }).compile();
 
         service = module.get<SettingsService>(SettingsService);
+        _prisma = module.get<PrismaClient>(PrismaClient);
     });
 
     afterEach(() => {

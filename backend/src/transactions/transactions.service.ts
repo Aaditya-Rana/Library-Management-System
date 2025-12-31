@@ -4,7 +4,7 @@ import {
     BadRequestException,
     ForbiddenException,
 } from '@nestjs/common';
-import { PrismaService } from '../common/services/prisma.service';
+import { PrismaClient } from '@prisma/client';
 import { BooksService } from '../books/books.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { SettingsService } from '../settings/settings.service';
@@ -18,10 +18,10 @@ import { TransactionStatus, Prisma } from '@prisma/client';
 @Injectable()
 export class TransactionsService {
     constructor(
-        private prisma: PrismaService,
-        private booksService: BooksService,
-        private notificationsService: NotificationsService,
-        private settingsService: SettingsService,
+        private readonly prisma: PrismaClient,
+        private readonly booksService: BooksService,
+        private readonly notificationsService: NotificationsService,
+        private readonly settingsService: SettingsService,
     ) { }
 
     private async getSettingValue(key: string, defaultValue: any): Promise<any> {

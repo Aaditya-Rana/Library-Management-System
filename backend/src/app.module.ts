@@ -11,13 +11,14 @@ import { PaymentsModule } from './payments/payments.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ReportsModule } from './reports/reports.module';
 import { SettingsModule } from './settings/settings.module';
-import { PrismaService } from './common/services/prisma.service';
+import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    PrismaModule,
     AuthModule,
     UsersModule,
     BooksModule,
@@ -30,7 +31,6 @@ import { PrismaService } from './common/services/prisma.service';
   controllers: [AppController],
   providers: [
     AppService,
-    PrismaService,
     {
       provide: APP_PIPE,
       useClass: ValidationPipe,

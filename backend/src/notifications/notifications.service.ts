@@ -3,14 +3,14 @@ import {
     NotFoundException,
     ForbiddenException,
 } from '@nestjs/common';
-import { PrismaService } from '../common/services/prisma.service';
+import { PrismaClient } from '@prisma/client';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { QueryNotificationsDto } from './dto/query-notifications.dto';
 import { UserRole, NotificationType, NotificationCategory } from '@prisma/client';
 
 @Injectable()
 export class NotificationsService {
-    constructor(private readonly prisma: PrismaService) { }
+    constructor(private readonly prisma: PrismaClient) { }
 
     async createNotification(dto: CreateNotificationDto) {
         const notification = await this.prisma.notification.create({
